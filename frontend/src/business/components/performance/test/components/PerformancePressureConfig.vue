@@ -16,6 +16,19 @@
           <el-form-item :label="$t('load_test.serialize_threadgroups')">
             <el-switch v-model="serializeThreadGroups"/>
           </el-form-item>
+          <br>
+          <el-form-item :label="$t('load_test.autostop_threadgroups')">
+            <el-switch v-model="autoStop"/>
+          </el-form-item>
+          <el-form-item :label="$t('load_test.reaches_duration')">
+            <el-input-number
+              :disabled="isReadOnly || !autoStop"
+              v-model="autoStopDelay"
+              :min="1"
+              :max="9999"
+              size="mini"/>
+          </el-form-item>
+          <el-form-item :label="$t('load_test.autostop_delay')"/>
         </el-form>
       </el-col>
     </el-row>
@@ -180,8 +193,9 @@ import {findThreadGroup} from "@/business/components/performance/test/model/Thre
 
 const HANDLER = "handler";
 const THREAD_GROUP_TYPE = "tgType";
-const EXPECTED_DURATION = "expectedDuration";
 const SERIALIZE_THREAD_GROUPS = "serializeThreadGroups";
+const AUTO_STOP = "autoStop";
+const AUTO_STOP_DELAY = "autoStopDelay";
 const TARGET_LEVEL = "TargetLevel";
 const RAMP_UP = "RampUp";
 const ITERATE_RAMP_UP = "iterateRampUpTime";
@@ -237,6 +251,8 @@ export default {
       resourcePoolResourceLength: 1,
       maxThreadNumbers: 5000,
       serializeThreadGroups: false,
+      autoStop: false,
+      autoStopDelay: 30,
     }
   },
   mounted() {
@@ -325,6 +341,12 @@ export default {
                   break;
                 case SERIALIZE_THREAD_GROUPS:
                   this.serializeThreadGroups = item.value;// 所有的线程组值一样
+                  break;
+                case AUTO_STOP:
+                  this.autoStop = item.value;// 所有的线程组值一样
+                  break;
+                case AUTO_STOP_DELAY:
+                  this.autoStopDelay = item.value;// 所有的线程组值一样
                   break;
                 default:
                   break;
@@ -648,50 +670,9 @@ export default {
       }
       return this.$t('schedule.cron.seconds');
     },
-    calculateDuration() {
-      let expectedDuration = 0;
-      for (let i = 0; i < this.threadGroups.length; i++) {
-        if (this.serializeThreadGroups) {
-          switch (this.threadGroups[i].unit) {
-            case "S":
-              expectedDuration += this.threadGroups[i].duration;
-              break;
-            case "M":
-              expectedDuration += this.threadGroups[i].duration * 60;
-              break;
-            case "H":
-              expectedDuration += this.threadGroups[i].duration * 60 * 60;
-              break;
-            default:
-              break;
-          }
-        } else {
-          let tmp = 0;
-          switch (this.threadGroups[i].unit) {
-            case "S":
-              tmp = this.threadGroups[i].duration;
-              break;
-            case "M":
-              tmp = this.threadGroups[i].duration * 60;
-              break;
-            case "H":
-              tmp = this.threadGroups[i].duration * 60 * 60;
-              break;
-            default:
-              break;
-          }
-          if (expectedDuration < tmp) {
-            expectedDuration = tmp;
-          }
-        }
-      }
-      return expectedDuration;
-    },
     convertProperty() {
       /// todo：下面4个属性是jmeter ConcurrencyThreadGroup plugin的属性，这种硬编码不太好吧，在哪能转换这种属性？
       let result = [];
-      // 先计算执行时间
-      let expectedDuration = this.calculateDuration();
 
       // 再组织数据
       for (let i = 0; i < this.threadGroups.length; i++) {
@@ -711,8 +692,9 @@ export default {
           {key: ENABLED, value: this.threadGroups[i].enabled},
           {key: DELETED, value: this.threadGroups[i].deleted},
           {key: THREAD_GROUP_TYPE, value: this.threadGroups[i].tgType},
-          {key: EXPECTED_DURATION, value: expectedDuration},
           {key: SERIALIZE_THREAD_GROUPS, value: this.serializeThreadGroups},
+          {key: AUTO_STOP, value: this.autoStop},
+          {key: AUTO_STOP_DELAY, value: this.autoStopDelay},
         ]);
       }
 
