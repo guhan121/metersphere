@@ -111,6 +111,7 @@ public class ApiAutomationController {
         return apiAutomationService.getApiScenarios(ids);
     }
 
+    // 接口自动化调试
     @PostMapping(value = "/run/debug")
     public void runDebug(@RequestPart("request") RunDefinitionRequest request, @RequestPart(value = "files") List<MultipartFile> bodyFiles) {
         request.setExecuteType(ExecuteType.Debug.name());
