@@ -105,6 +105,12 @@
           </div>
         </el-tab-pane>
         <el-tab-pane label="场景步骤" name="Steps" class="overflow-y">
+          <!--操作按钮-->
+          <div class="ms-opt-btn" style="margin-top: 4px">
+            <el-button id="inputDelay1" type="primary" size="small" v-prevent-re-click @click="editScenario" title="ctrl + s">
+              {{ $t('commons.save') }}
+            </el-button>
+          </div>
           <!-- 场景步骤-->
           <div v-loading="loading" style="margin-top: 4px">
 <!--            <div @click="showAll">-->
@@ -370,7 +376,7 @@
         reportId: "",
         reportIdCopy:'',
         consoleText:'',
-        activeName:'BaseInfo',
+        activeName:'Steps',
         enableCookieShare: false,
         globalOptions: {
           spacing: 30
@@ -863,7 +869,11 @@
                     hashTree: this.scenarioDefinition
                   };
                   this.reportId = getUUID().substring(0, 8);
-                }).then(()=>{this.activeName = "Report";})
+                }).then(()=>{
+                  this.activeName = "Report";
+                  this.reportIdCopy='';
+                  this.consoleText='';
+                })
               })
 
             })
@@ -1010,6 +1020,7 @@
       editScenario() {
         return new Promise((resolve) => {
           document.getElementById("inputDelay").focus();  //  保存前在input框自动失焦，以免保存失败
+          document.getElementById("inputDelay1").focus();
           this.$refs['currentScenario'].validate((valid) => {
             if (valid) {
               this.setParameter();
