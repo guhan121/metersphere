@@ -871,8 +871,8 @@
                   this.reportId = getUUID().substring(0, 8);
                 }).then(()=>{
                   this.activeName = "Report";
-                  this.reportIdCopy='';
-                  this.consoleText='';
+                  this.reportIdCopy = '';
+                  this.consoleText = '';
                 })
               })
 
