@@ -122,7 +122,7 @@
                 <div class="ms-debug-div" @click="showAll">
                   <el-row style="margin: 5px">
                     <el-col :span="6" class="ms-col-one ms-font">
-                      <el-tooltip placement="top" effect="light">
+                      <el-tooltip placement="bottom-start" effect="light">
                         <template v-slot:content>
                           <div>{{ currentScenario.name }}</div>
                         </template>
@@ -1031,6 +1031,7 @@
                 if (response.data) {
                   this.currentScenario.id = response.data.id;
                   this.currentScenario.num = response.data.num;
+                  this.$set(this.currentScenario,"num",response.data.num)
                 }
                 if (this.currentScenario.tags instanceof String) {
                   this.currentScenario.tags = JSON.parse(this.currentScenario.tags);

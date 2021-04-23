@@ -725,6 +725,7 @@
         rowParam.copy = true;
         rowParam.name = 'copy_' + rowParam.name;
         rowParam.num = '';
+        rowParam.userId = null;
         rowParam.customNum = '';
         this.$emit('edit', rowParam);
       },
