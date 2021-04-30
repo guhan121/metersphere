@@ -205,7 +205,7 @@
   import {Api_Scenario_List} from "@/business/components/common/model/JsonData";
   import HeaderCustom from "@/business/components/common/head/HeaderCustom";
   import HeaderLabelOperate from "@/business/components/common/head/HeaderLabelOperate";
-
+  import {STATUS_FILTER,STATUS_FILTER_ALL,API_STATUS} from "@/business/components/api/definition/model/JsonData";
   export default {
     name: "MsApiScenarioList",
     components: {
@@ -325,12 +325,7 @@
           // {id: 'environmentId', name: this.$t('api_test.definition.request.run_env'), optionMethod: this.getEnvsOptions},
           {id: 'projectEnv', name: this.$t('api_test.definition.request.run_env')},
         ],
-        statusFilters: [
-          {text: this.$t('test_track.plan.plan_status_prepare'), value: 'Prepare'},
-          {text: this.$t('test_track.plan.plan_status_running'), value: 'Underway'},
-          {text: this.$t('test_track.plan.plan_status_completed'), value: 'Completed'},
-          {text: this.$t('test_track.plan.plan_status_trash'), value: 'Trash'},
-        ],
+        statusFilters: STATUS_FILTER_ALL,
         levelFilters: [
           {text: 'P0', value: 'P0'},
           {text: 'P1', value: 'P1'},
@@ -348,11 +343,7 @@
             {name: 'P2', id: 'P2'},
             {name: 'P3', id: 'P3'}
           ],
-          status: [
-            {name: this.$t('test_track.plan.plan_status_prepare'), id: 'Prepare'},
-            {name: this.$t('test_track.plan.plan_status_running'), id: 'Underway'},
-            {name: this.$t('test_track.plan.plan_status_completed'), id: 'Completed'}
-          ],
+          status: API_STATUS,
           principal: [],
           environmentId: [],
           projectEnv: [],
@@ -360,7 +351,7 @@
       }
     },
     created() {
-      this.condition.filters = {status: ["Prepare", "Underway", "Completed"]};
+      this.condition.filters = {status: STATUS_FILTER};
       this.search();
       this.getPrincipalOptions([]);
     },
@@ -376,7 +367,7 @@
           this.condition.filters = {status: ["Trash"]};
           this.condition.moduleIds = [];
         } else {
-          this.condition.filters = {status: ["Prepare", "Underway", "Completed"]};
+          this.condition.filters = {status: STATUS_FILTER};
         }
         this.condition.selectAll = false;
         this.condition.unSelectIds = [];
