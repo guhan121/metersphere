@@ -869,7 +869,7 @@
                     hashTree: this.scenarioDefinition
                   };
                   this.reportId = getUUID().substring(0, 8);
-                }).then(()=>{
+                }).then(() => {
                   this.activeName = "Report";
                   this.reportIdCopy = '';
                   this.consoleText = '';
