@@ -77,7 +77,7 @@ public class JMeterService {
             String runMode = StringUtils.isBlank(debugReportId) ? ApiRunMode.RUN.name() : ApiRunMode.DEBUG.name();
             addBackendListener(testId, debugReportId, runMode, testPlan);
             LocalRunner runner = new LocalRunner(testPlan);
-            runner.run();
+            runner.run(testId);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(Translator.get("api_load_script_error"));
@@ -141,12 +141,12 @@ public class JMeterService {
     }
 
     public void runDefinition(String testId, HashTree testPlan, String debugReportId, String runMode) {
-        LogUtil.info(MessageFormat.format("Tid:{3},testId:{0},debugReportId:{1},runMode:{2}",testId,debugReportId,runMode,Thread.currentThread().getId()));
+        LogUtil.info(MessageFormat.format("Tid:{3},testId:{0},debugReportId:{1},runMode:{2}", testId, debugReportId, runMode, Thread.currentThread().getId()));
         try {
             init();
             addBackendListener(testId, debugReportId, runMode, testPlan);
             LocalRunner runner = new LocalRunner(testPlan);
-            runner.run();
+            runner.run(testId);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(Translator.get("api_load_script_error"));
@@ -158,7 +158,7 @@ public class JMeterService {
             init();
             addBackendListener(testId, debugReportId, runMode, testPlan, config);
             LocalRunner runner = new LocalRunner(testPlan);
-            runner.run();
+            runner.run(testId);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(Translator.get("api_load_script_error"));

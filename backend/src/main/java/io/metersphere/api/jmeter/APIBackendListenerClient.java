@@ -1,6 +1,5 @@
 package io.metersphere.api.jmeter;
 
-
 import com.alibaba.fastjson.JSONObject;
 import io.metersphere.api.dto.automation.ApiTestReportVariable;
 import io.metersphere.api.dto.scenario.request.RequestType;
@@ -20,16 +19,16 @@ import io.metersphere.track.service.TestPlanTestCaseService;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.assertions.AssertionResult;
+import org.apache.jmeter.engine.StandardJMeterEngine;
 import org.apache.jmeter.protocol.http.sampler.HTTPSampleResult;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.threads.JMeterContext;
+import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
 import org.apache.jmeter.visualizers.backend.BackendListenerContext;
 import org.springframework.http.HttpMethod;
 
 import java.io.*;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -75,26 +74,22 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     // 只有合并报告是这个有值
     private String setReportId;
 
-    //获得控制台内容
-//    private PrintStream oldPrintStream = System.out;
-    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    private ThreadLocal<ByteArrayOutputStream> bos = ThreadLocal.withInitial(ByteArrayOutputStream::new);
 
     private void setConsole() {
-        PrintStream printStream = new PrintStream(bos);
-        System.setOut(printStream);
-        System.setErr(printStream);
+        ThreadFileOutput.startThreadOutputRedirect(bos.get());
     }
 
     private String getConsole() {
-        System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
-        System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err)));
-        return bos.toString();
+        ThreadFileOutput.stopThreadOutputRedirect();
+        return bos.get().toString();
     }
 
     @Override
     public void setupTest(BackendListenerContext context) throws Exception {
         setConsole();
         setParam(context);
+        System.out.println("setupTest:" + context.toString() + ";" + Thread.currentThread().getName() + ";" + Thread.currentThread().getId());
         apiTestService = CommonBeanFactory.getBean(APITestService.class);
         if (apiTestService == null) {
             LogUtil.error("apiTestService is required");
@@ -144,6 +139,15 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 
     @Override
     public void teardownTest(BackendListenerContext context) throws Exception {
+        try {
+            JMeterContext jMeterContext = JMeterContextService.getContext();
+            StandardJMeterEngine jMeterContextEngine = jMeterContext.getEngine();
+            byte[] logText = jMeterContextEngine.logText;
+            this.bos.get().write(logText);
+        } catch (Exception e) {
+            e.printStackTrace(new PrintStream(new FileOutputStream(FileDescriptor.out)));
+        }
+        System.out.println("teardownTest:" + context.toString() + ";" + Thread.currentThread().getName() + ";" + Thread.currentThread().getId());
         TestResult testResult = new TestResult();
         testResult.setTestId(testId);
         testResult.setTotal(queue.size());

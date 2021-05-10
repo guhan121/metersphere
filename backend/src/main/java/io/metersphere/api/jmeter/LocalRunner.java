@@ -13,7 +13,7 @@ public class LocalRunner {
         this.jmxTree = jmxTree;
     }
 
-    public void run() {
+    public void run(String testId) {
         JMeterEngine engine = new StandardJMeterEngine();
         engine.configure(jmxTree);
         try {

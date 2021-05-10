@@ -141,6 +141,7 @@ public abstract class JSR223TestElement extends ScriptingTestElement
         bindings.put("args", args); // $NON-NLS-1$ (this name is fixed)
         // Add variables for access to context and variables
         JMeterContext jmctx = JMeterContextService.getContext();
+        System.out.println(jmctx.toString()+";"+ Thread.currentThread().getName() +";"+Thread.currentThread().getId());
         bindings.put("ctx", jmctx); // $NON-NLS-1$ (this name is fixed)
         JMeterVariables vars = jmctx.getVariables();
         bindings.put("vars", vars); // $NON-NLS-1$ (this name is fixed)
