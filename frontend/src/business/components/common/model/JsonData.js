@@ -49,6 +49,7 @@ export const Api_List = [
   {id: 'caseTotal', label: i18n.t('api_test.definition.api_case_number')},
   {id: 'caseStatus', label: i18n.t('api_test.definition.api_case_status')},
   {id: 'casePassingRate', label: i18n.t('api_test.definition.api_case_passing_rate')},
+  {id: 'status', label: i18n.t('api_test.definition.api_status')}
 ]
 //接口定义-case列表
 export const Api_Case_List = [
@@ -69,6 +70,7 @@ export const Api_Scenario_List = [
   {id: 'status', label: i18n.t('test_track.plan.plan_status')},
   {id: 'tags', label: i18n.t('commons.tag')},
   {id: 'userId', label: i18n.t('api_test.automation.creator')},
+  {id: 'principal', label: i18n.t('api_test.definition.api_principal')},
   {id: 'updateTime', label: i18n.t('api_test.definition.api_last_time')},
   {id: 'stepTotal', label: i18n.t('api_test.automation.step')},
   {id: 'lastResult', label: i18n.t('api_test.automation.last_result')},

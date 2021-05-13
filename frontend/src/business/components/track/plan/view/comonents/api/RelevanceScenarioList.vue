@@ -16,7 +16,12 @@
 
       <el-table ref="scenarioTable" border :data="tableData" class="adjust-table" @select-all="handleSelectAll" @select="handleSelect">
         <el-table-column type="selection"/>
-
+        <el-table-column v-if="!customNum" prop="num" label="ID"
+                         show-overflow-tooltip>
+        </el-table-column>
+        <el-table-column v-if="customNum" prop="customNum" label="ID"
+                         show-overflow-tooltip>
+        </el-table-column>
         <el-table-column prop="name" :label="$t('api_test.automation.scenario_name')"
                          show-overflow-tooltip min-width="240"/>
         <el-table-column prop="level" :label="$t('api_test.automation.case_level')"
@@ -114,7 +119,8 @@
         projectEnvMap: new Map(),
         projectList: [],
         projectIds: new Set(),
-        map: new Map()
+        map: new Map(),
+        customNum: false
       }
     },
     watch: {
@@ -138,6 +144,7 @@
         if (!this.projectId) {
           return;
         }
+        this.getProject(this.projectId);
         this.selectRows = new Set();
         this.loading = true;
 
@@ -180,6 +187,16 @@
         this.$get("/project/listAll", res => {
           this.projectList = res.data;
         })
+      },
+      getProject(projectId) {
+        if (projectId) {
+          this.$get("/project/get/" + projectId, result => {
+            let data = result.data;
+            if (data) {
+              this.customNum = data.scenarioCustomNum;
+            }
+          });
+        }
       },
       initProjectIds() {
         this.projectIds.clear();

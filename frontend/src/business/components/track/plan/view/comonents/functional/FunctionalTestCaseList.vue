@@ -74,7 +74,8 @@
           prop="priority"
           :filters="priorityFilters"
           column-key="priority"
-          min-width="100px"
+          sortable="custom"
+          min-width="120px"
           :key="index"
           :label="$t('test_track.case.priority')">
           <template v-slot:default="scope">
@@ -414,6 +415,7 @@ export default {
       this.refreshTableAndPlan();
     },
     selectNodeIds() {
+      this.condition.selectAll = false;
       this.search();
     },
     tableLabel: {

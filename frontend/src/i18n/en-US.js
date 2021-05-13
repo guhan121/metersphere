@@ -155,8 +155,18 @@ export default {
     node_name_tip: "The name cannot contain'\\'",
     more_operator: "More operator",
     mock: "Mock settings",
+    all_module_title: "All module",
     table: {
       select_tip: "Item {0} data is selected"
+    },
+    ssl: {
+      config: "Config",
+      files: "Files",
+      entry: "Entry",
+      original_as_name: "Original as name",
+      new_as_name: "New name",
+      source: "Source",
+      default: "Default"
     },
     date: {
       select_date: 'Select date',
@@ -1341,6 +1351,8 @@ export default {
         xmind_title: "Xmind",
         import_desc: "Import instructions",
         import_file: "upload files",
+        ignore_error: "Ignore errors ",
+        continue_upload: "Upload continue",
       },
       export: {
         export: "Export cases"

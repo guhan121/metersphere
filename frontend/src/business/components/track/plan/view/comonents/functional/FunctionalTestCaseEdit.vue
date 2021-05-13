@@ -273,6 +273,7 @@ export default {
       param.results = [];
       param.remark = this.testCase.remark;
       param.projectId = this.projectId;
+      param.nodeId = this.testCase.nodeId;
       let option = this.getOption(param);
       for (let i = 0; i < this.testCase.steptResults.length; i++) {
         let result = {};
@@ -434,16 +435,6 @@ export default {
 </script>
 
 <style scoped>
-
-.border-hidden >>> .el-textarea__inner {
-  border-style: hidden;
-  background-color: white;
-  color: #060505;
-}
-
-.border-hidden >>> *[disabled] {
-  opacity: 0.7;
-}
 
 .cast_label {
   color: dimgray;

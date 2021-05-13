@@ -156,8 +156,18 @@ export default {
     node_name_tip: "名称不能包含'\\'",
     more_operator: "更多操作",
     mock: "Mock 设置",
+    all_module_title: "全部模块",
     table: {
       select_tip: "已选中 {0} 条数据"
+    },
+    ssl: {
+      config: "证书配置",
+      files: "证书文件",
+      entry: "证书条目",
+      original_as_name: "原有别名",
+      new_as_name: "新别名",
+      source: "来源",
+      default: "是否默认"
     },
     date: {
       select_date: '选择日期',
@@ -1346,6 +1356,8 @@ export default {
         xmind_title: "思维导图",
         import_desc: "导入说明",
         import_file: "上传文件",
+        ignore_error: "忽略错误",
+        continue_upload: "继续上传",
       },
       export: {
         export: "导出用例"

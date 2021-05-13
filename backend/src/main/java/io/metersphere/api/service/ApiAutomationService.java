@@ -329,7 +329,12 @@ public class ApiAutomationService {
         } else {
             scenario.setStatus(ScenarioStatus.Underway.name());
         }
-        scenario.setUserId(SessionUtils.getUserId());
+        if (StringUtils.isNotEmpty(request.getUserId())) {
+            scenario.setUserId(request.getUserId());
+        } else {
+            scenario.setUserId(SessionUtils.getUserId());
+        }
+
         if (StringUtils.isEmpty(request.getApiScenarioModuleId()) || "default-module".equals(request.getApiScenarioModuleId())) {
             ApiScenarioModuleExample example = new ApiScenarioModuleExample();
             example.createCriteria().andProjectIdEqualTo(request.getProjectId()).andNameEqualTo("默认模块");
@@ -1017,6 +1022,7 @@ public class ApiAutomationService {
                     isEnv = false;
                 } else {
                     Set<String> projectIds = apiScenarioEnv.getProjectIds();
+                    projectIds.remove(null);
                     if (CollectionUtils.isNotEmpty(envMap.keySet())) {
                         for (String id : projectIds) {
                             Project project = projectMapper.selectByPrimaryKey(id);
@@ -1769,5 +1775,12 @@ public class ApiAutomationService {
 
     public void updateCustomNumByProjectId(String id) {
         extApiScenarioMapper.updateCustomNumByProjectId(id);
+    }
+
+    public List<ApiScenarioWithBLOBs> listWithIds(ApiScenarioBatchRequest request) {
+        ServiceUtils.getSelectAllIds(request, request.getCondition(),
+                (query) -> extApiScenarioMapper.selectIdsByQuery((ApiScenarioRequest) query));
+        List<ApiScenarioWithBLOBs> list = extApiScenarioMapper.listWithIds(request.getIds());
+        return list;
     }
 }

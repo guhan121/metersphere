@@ -6,7 +6,7 @@
           <div class="ms-main-div" @click="showAll" v-if="type!=='detail'" style="margin-top: 4px">
             <!--操作按钮-->
             <div class="ms-opt-btn">
-              <el-button id="inputDelay" type="primary" size="small" v-prevent-re-click @click="editScenario" title="ctrl + s">
+          <el-button id="inputDelay" type="primary" size="small" v-prevent-re-click @click="editScenario" title="ctrl + s" v-tester>
                 {{ $t('commons.save') }}
               </el-button>
             </div>
@@ -134,7 +134,7 @@
                     <el-col :span="3" class="ms-col-one ms-font">
                       {{$t('api_test.automation.step_total')}}：{{scenarioDefinition.length}}
                     </el-col>
-                    <el-col :span="3" class="ms-col-one ms-font">
+                <el-col :span="3" class="ms-col-one ms-font" v-tester>
                       <el-link class="head" @click="showScenarioParameters">{{$t('api_test.automation.scenario_total')}}</el-link>
                       ：{{ getVariableSize() }}
                     </el-col>
@@ -143,14 +143,14 @@
                     </el-col>
                     <el-col :span="5">
                   <env-popover :disabled="scenarioDefinition.length < 1" :env-map="projectEnvMap" :project-ids="projectIds" @setProjectEnvMap="setProjectEnvMap" :result="envResult"
-                                   :isReadOnly="scenarioDefinition.length < 1" @showPopover="showPopover" :project-list="projectList" ref="envPopover"/>
+                               :isReadOnly="scenarioDefinition.length < 1" @showPopover="showPopover" :project-list="projectList" ref="envPopover" v-tester/>
                     </el-col>
                     <el-col :span="4">
-                      <el-button :disabled="scenarioDefinition.length < 1" size="mini" type="primary" v-prevent-re-click @click="runDebug">{{$t('api_test.request.debug')}}</el-button>
+                  <el-button :disabled="scenarioDefinition.length < 1" size="mini" type="primary" v-prevent-re-click @click="runDebug" v-tester>{{$t('api_test.request.debug')}}</el-button>
                       <el-tooltip class="item" effect="dark" :content="$t('commons.refresh')" placement="right-start">
                         <el-button :disabled="scenarioDefinition.length < 1" size="mini"  icon ="el-icon-refresh" v-prevent-re-click @click="getApiScenario"></el-button>
                       </el-tooltip>
-                      <font-awesome-icon class="alt-ico" :icon="['fa', 'expand-alt']" size="lg" @click="fullScreen"/>
+                  <font-awesome-icon class="alt-ico" :icon="['fa', 'expand-alt']" size="lg" @click="fullScreen" v-tester/>
                     </el-col>
                   </el-row>
                 </div>
@@ -180,7 +180,7 @@
               </el-col>
               <!-- 按钮列表 -->
               <el-col :span="3">
-                <div @click="fabClick">
+            <div @click="fabClick" v-tester>
                   <vue-fab id="fab" mainBtnColor="#783887" size="small" :global-options="globalOptions"
                            :click-auto-close="false" v-outside-click="outsideClick">
                     <fab-item
@@ -663,7 +663,6 @@
       recursiveSorting(arr, scenarioProjectId) {
         for (let i in arr) {
           arr[i].index = Number(i) + 1;
-          arr[i].active = this.expandedStatus;
           if (arr[i].type === ELEMENT_TYPE.LoopController && arr[i].loopType === "LOOP_COUNT" && arr[i].hashTree && arr[i].hashTree.length > 1) {
             arr[i].countController.proceed = true;
           }
@@ -690,7 +689,6 @@
         for (let i in this.scenarioDefinition) {
           // 排序
           this.scenarioDefinition[i].index = Number(i) + 1;
-          this.scenarioDefinition[i].active = this.expandedStatus;
           // 设置循环控制
           if (this.scenarioDefinition[i].type === ELEMENT_TYPE.LoopController && this.scenarioDefinition[i].hashTree
             && this.scenarioDefinition[i].hashTree.length > 1) {
@@ -937,10 +935,14 @@
         }
       },
       nodeExpand(data, node) {
-        node.expanded = true;
+        if (data && data.resourceId && this.expandedNode.indexOf(data.resourceId) === -1) {
+          this.expandedNode.push(data.resourceId);
+        }
       },
-      nodeCollapse(data,node) {
-        node.expanded = false;
+      nodeCollapse(data, node) {
+        if (data && data.resourceId) {
+          this.expandedNode.splice(this.expandedNode.indexOf(data.resourceId), 1);
+        }
       },
       setFiles(item, bodyUploadFiles, obj) {
         if (item.body) {
@@ -1018,6 +1020,9 @@
         return bodyUploadFiles;
       },
       editScenario() {
+        if (!document.getElementById("inputDelay")) {
+          return;
+        }
         return new Promise((resolve) => {
           document.getElementById("inputDelay").focus();  //  保存前在input框自动失焦，以免保存失败
           document.getElementById("inputDelay1").focus();
@@ -1056,7 +1061,7 @@
       },
       getApiScenario() {
         this.loading = true;
-        if (this.currentScenario.tags != undefined && this.currentScenario.tags &&  !(this.currentScenario.tags instanceof Array)) {
+        if (this.currentScenario.tags != undefined && this.currentScenario.tags && !(this.currentScenario.tags instanceof Array)) {
           this.currentScenario.tags = JSON.parse(this.currentScenario.tags);
         }
         if (!this.currentScenario.variables) {
@@ -1222,7 +1227,7 @@
         //改变每个节点的状态
         for (let i in this.scenarioDefinition) {
           if (this.scenarioDefinition[i]) {
-            if (this.expandedStatus) {
+            if (this.expandedStatus && this.expandedNode.indexOf(this.scenarioDefinition[i].resourceId) === -1) {
               this.expandedNode.push(this.scenarioDefinition[i].resourceId);
             }
             this.scenarioDefinition[i].active = this.expandedStatus;

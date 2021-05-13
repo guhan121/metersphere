@@ -7,6 +7,7 @@
       v-loading="result.loading"
       :tree-nodes="data"
       :type="isReadOnly ? 'view' : 'edit'"
+      :allLabel="$t('commons.all_module_title')"
       @add="add"
       @edit="edit"
       @drag="drag"
@@ -92,9 +93,9 @@
       },
     },
     mounted() {
-      this.$emit('protocolChange', this.condition.protocol);
-      this.list();
+      this.initProtocol();
     },
+
     watch: {
       'condition.filterText'(val) {
         this.$refs.nodeTree.filter(val);
@@ -117,6 +118,13 @@
       }
     },
     methods: {
+      initProtocol() {
+        this.$get('/api/module/getUserDefaultApiType/', response => {
+          this.condition.protocol = response.data;
+          this.$emit('protocolChange', this.condition.protocol);
+          this.list();
+        });
+      },
       list(projectId) {
         let url = undefined;
         if (this.isPlanModel) {
