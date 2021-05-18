@@ -156,9 +156,9 @@
                 </div>
                 <!-- 场景步骤内容 -->
                 <div>
-              <el-button class="el-icon-files ms-open-btn ms-open-btn-left" size="mini" v-prevent-re-click @click="openExpansion">
-                {{$t('api_test.automation.open_expansion')}}
-              </el-button>
+<!--              <el-button class="el-icon-files ms-open-btn ms-open-btn-left" size="mini" v-prevent-re-click @click="openExpansion">-->
+<!--                {{$t('api_test.automation.open_expansion')}}-->
+<!--              </el-button>-->
               <el-button class=" el-icon-notebook-1 ms-open-btn" size="mini" @click="closeExpansion">
                 {{$t('api_test.automation.close_expansion')}}
               </el-button>
@@ -1240,6 +1240,7 @@
       },
       shrinkTreeNode() {
         //改变每个节点的状态
+        console.log("----")
         for (let i in this.scenarioDefinition) {
           if (this.scenarioDefinition[i]) {
             if (this.expandedStatus && this.expandedNode.indexOf(this.scenarioDefinition[i].resourceId) === -1) {
