@@ -46,9 +46,7 @@ public class MetricQueryService {
     @Resource
     private LoadTestReportMapper loadTestReportMapper;
     @Resource
-    private LoadTestMapper loadTestMapper;
-    @Resource
-    private ReportService reportService;
+    private PerformanceReportService performanceReportService;
     @Resource
     private ExtLoadTestReportMapper extLoadTestReportMapper;
     @Resource
@@ -163,9 +161,7 @@ public class MetricQueryService {
     public List<MetricData> queryMetric(String reportId) {
         List<String> instances = new ArrayList<>();
         LoadTestReportWithBLOBs report = loadTestReportMapper.selectByPrimaryKey(reportId);
-        String testId = report.getTestId();
-        LoadTestWithBLOBs loadTestWithBLOBs = loadTestMapper.selectByPrimaryKey(testId);
-        String poolId = loadTestWithBLOBs.getTestResourcePoolId();
+        String poolId = report.getTestResourcePoolId();
         List<TestResource> resourceList = testResourceService.getTestResourceList(poolId);
         // 默认监控资源池下的节点
         if (CollectionUtils.isNotEmpty(resourceList)) {
@@ -177,7 +173,7 @@ public class MetricQueryService {
                 }
             });
         }
-        String advancedConfiguration = loadTestWithBLOBs.getAdvancedConfiguration();
+        String advancedConfiguration = report.getAdvancedConfiguration();
         JSONObject jsonObject = JSON.parseObject(advancedConfiguration);
         JSONArray monitorParams = jsonObject.getJSONArray("monitorParams");
         if (monitorParams == null) {
@@ -197,7 +193,7 @@ public class MetricQueryService {
             getRequest(instance, list);
         });
 
-        ReportTimeInfo reportTimeInfo = reportService.getReportTimeInfo(reportId);
+        ReportTimeInfo reportTimeInfo = performanceReportService.getReportTimeInfo(reportId);
         MetricRequest metricRequest = new MetricRequest();
         metricRequest.setMetricDataQueries(list);
         try {
@@ -250,9 +246,7 @@ public class MetricQueryService {
         });
 
         LoadTestReportWithBLOBs report = loadTestReportMapper.selectByPrimaryKey(reportId);
-        String testId = report.getTestId();
-        LoadTestWithBLOBs loadTestWithBLOBs = loadTestMapper.selectByPrimaryKey(testId);
-        String advancedConfiguration = loadTestWithBLOBs.getAdvancedConfiguration();
+        String advancedConfiguration = report.getAdvancedConfiguration();
         JSONObject jsonObject = JSON.parseObject(advancedConfiguration);
         JSONArray monitorParams = jsonObject.getJSONArray("monitorParams");
         if (monitorParams == null) {

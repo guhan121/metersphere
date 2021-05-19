@@ -211,7 +211,7 @@ export default {
           priority: CASE_PRIORITY,
         },
         methodColorMap: new Map(API_METHOD_COLOUR),
-        screenHeight: document.documentElement.clientHeight - 330,//屏幕高度
+        screenHeight: document.documentElement.clientHeight - 400,//屏幕高度
         tableData: [],
         currentPage: 1,
         pageSize: 10,
@@ -289,7 +289,11 @@ export default {
       this.result = this.$post(url + this.currentPage + "/" + this.pageSize, this.condition, response => {
         this.total = response.data.itemCount;
         this.tableData = response.data.listObject;
-
+        this.tableData.forEach(item => {
+          if (item.tags && item.tags.length > 0) {
+            item.tags = JSON.parse(item.tags);
+          }
+        });
         this.$nextTick(function () {
           if (this.$refs.table) {
             this.$refs.table.doLayout();
