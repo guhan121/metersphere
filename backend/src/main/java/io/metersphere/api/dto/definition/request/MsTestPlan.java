@@ -20,6 +20,12 @@ public class MsTestPlan extends MsTestElement {
     private String type = "TestPlan";
     private boolean serializeThreadgroups = false;
 
+    public MsTestPlan() {
+    }
+    public MsTestPlan(boolean serial) {
+        serializeThreadgroups = serial;
+    }
+
     @Override
     public void toHashTree(HashTree tree, List<MsTestElement> hashTree, ParameterConfig config) {
         final HashTree testPlanTree = tree.add(getPlan());
