@@ -134,7 +134,7 @@
                     <el-col :span="3" class="ms-col-one ms-font">
                       {{$t('api_test.automation.step_total')}}：{{scenarioDefinition.length}}
                     </el-col>
-                <el-col :span="3" class="ms-col-one ms-font" v-tester>
+                    <el-col :span="3" class="ms-col-one ms-font" v-tester>
                       <el-link class="head" @click="showScenarioParameters">{{$t('api_test.automation.scenario_total')}}</el-link>
                       ：{{ getVariableSize() }}
                     </el-col>
@@ -1248,11 +1248,11 @@
           }
         }
       },
-      openExpansion() {
-        this.expandedNode = [];
-        this.expandedStatus = true;
-        this.shrinkTreeNode();
-      },
+      // openExpansion() {
+      //   this.expandedNode = [];
+      //   this.expandedStatus = true;
+      //   this.shrinkTreeNode();
+      // },
       closeExpansion() {
         this.expandedStatus = false;
         this.expandedNode = [];
