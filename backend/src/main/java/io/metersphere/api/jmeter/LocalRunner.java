@@ -13,7 +13,7 @@ public class LocalRunner {
         this.jmxTree = jmxTree;
     }
 
-    public void run(String testId) {
+    public void run() throws JMeterEngineException {
         JMeterEngine engine = new StandardJMeterEngine();
         engine.configure(jmxTree);
         try {
@@ -21,6 +21,7 @@ public class LocalRunner {
         } catch (JMeterEngineException e) {
             LogUtil.error("JMeterEngineException:", e);
             engine.stopTest(true);
+            throw e;
         }
     }
 }

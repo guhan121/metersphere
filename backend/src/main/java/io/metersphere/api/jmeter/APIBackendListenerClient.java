@@ -74,20 +74,35 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
     // 只有合并报告是这个有值
     private String setReportId;
 
-    private ThreadLocal<ByteArrayOutputStream> bos = ThreadLocal.withInitial(ByteArrayOutputStream::new);
 
-    private void setConsole() {
-        ThreadFileOutput.startThreadOutputRedirect(bos.get());
+    static int numbersOfTest = 0;
+
+    /**
+     * Increment number of active threads.
+     */
+    static synchronized void incrNumberOfThreads() {
+        numbersOfTest++;
     }
 
-    private String getConsole() {
-        ThreadFileOutput.stopThreadOutputRedirect();
-        return bos.get().toString();
+    /**
+     * Decrement number of active threads.
+     */
+    static synchronized void decrNumberOfThreads() {
+        numbersOfTest--;
     }
+
+    /**
+     * Get the number of currently active threads
+     *
+     * @return active thread count
+     */
+    public static synchronized int getNumberOfThreads() {
+        return numbersOfTest;
+    }
+
 
     @Override
     public void setupTest(BackendListenerContext context) throws Exception {
-        setConsole();
         setParam(context);
         System.out.println("setupTest:" + context.toString() + ";" + Thread.currentThread().getName() + ";" + Thread.currentThread().getId());
         apiTestService = CommonBeanFactory.getBean(APITestService.class);
@@ -137,22 +152,34 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         queue.addAll(sampleResults);
     }
 
-    @Override
-    public void teardownTest(BackendListenerContext context) throws Exception {
+    private String getConsoleByThreadGroupIndex(String i) {
         try {
             JMeterContext jMeterContext = JMeterContextService.getContext();
             StandardJMeterEngine jMeterContextEngine = jMeterContext.getEngine();
-            byte[] logText = jMeterContextEngine.logText;
-            this.bos.get().write(logText);
+            if (jMeterContextEngine.logMap.containsKey(i)) {
+                String log = new String(jMeterContextEngine.logMap.get(i));
+                jMeterContextEngine.logMap.remove(i);  // 第一个人获取了就删除掉；免得报告大小倍增
+                return log;
+            } else {
+                return "";
+            }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(new FileOutputStream(FileDescriptor.out)));
         }
-        System.out.println("teardownTest:" + context.toString() + ";" + Thread.currentThread().getName() + ";" + Thread.currentThread().getId());
+        return "";
+    }
+
+    @Override
+    public void teardownTest(BackendListenerContext context) throws Exception {
+        APIBackendListenerClient.decrNumberOfThreads();
+        PrintStream std = new PrintStream(new FileOutputStream(FileDescriptor.out));
+        ThreadFileOutput.stopThreadOutputRedirect();
+        std.println("teardownTest:" + context.toString() + ";" + Thread.currentThread().getName() + ";" + Thread.currentThread().getId());
         TestResult testResult = new TestResult();
         testResult.setTestId(testId);
         testResult.setTotal(queue.size());
         testResult.setSetReportId(this.setReportId);
-
+        std.println("===queue size=====" + queue.size());
         // 一个脚本里可能包含多个场景(ThreadGroup)，所以要区分开，key: 场景Id
         final Map<String, ScenarioResult> scenarios = new LinkedHashMap<>();
         queue.forEach(result -> {
@@ -183,6 +210,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
             }
 
             RequestResult requestResult = getRequestResult(result);
+            requestResult.getResponseResult().setConsole(getConsoleByThreadGroupIndex(result.getThreadName()));
             scenarioResult.getRequestResults().add(requestResult);
             scenarioResult.addResponseTime(result.getTime());
 
@@ -284,10 +312,16 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
             } else {
                 apiDefinitionExecResultService.saveApiResult(testResult, ApiRunMode.API_PLAN.name());
             }
-        } else if (StringUtils.equalsAny(this.runMode, ApiRunMode.SCENARIO.name(), ApiRunMode.SCENARIO_PLAN.name(), ApiRunMode.SCHEDULE_SCENARIO_PLAN.name(), ApiRunMode.SCHEDULE_SCENARIO.name())) {
+        } else if (StringUtils.equalsAny(this.runMode, ApiRunMode.SCENARIO.name(), ApiRunMode.SCENARIO_PLAN.name(),
+                ApiRunMode.SCHEDULE_SCENARIO_PLAN.name(), ApiRunMode.SCHEDULE_SCENARIO.name())) {
             // 执行报告不需要存储，由用户确认后在存储
-            testResult.setTestId(testId);
+//            testResult.setTestId(testId);
+            // 设置所有的是完成状态
+            // 返回的是最后一个报告
             ApiScenarioReport scenarioReport = apiScenarioReportService.complete(testResult, this.runMode);
+            if (scenarioReport == null) {
+                LogUtil.error("scenarioReport = null,this.runMode=" + this.runMode);
+            }
             //环境
             ApiScenarioWithBLOBs apiScenario = apiAutomationService.getDto(scenarioReport.getScenarioId());
             String executionEnvironment = apiScenario.getScenarioDefinition();
@@ -466,7 +500,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
                 responseResult.getAssertions().add(responseAssertionResult);
             }
         }
-        responseResult.setConsole(getConsole());
+//        responseResult.setConsole(getConsole());
 
         return requestResult;
     }

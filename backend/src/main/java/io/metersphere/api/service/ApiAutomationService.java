@@ -30,7 +30,6 @@ import io.metersphere.commons.constants.*;
 import io.metersphere.commons.exception.MSException;
 import io.metersphere.commons.utils.*;
 import io.metersphere.controller.request.ScheduleRequest;
-import io.metersphere.dto.BaseSystemConfigDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.job.sechedule.ApiScenarioTestJob;
 import io.metersphere.job.sechedule.SwaggerUrlImportJob;
@@ -128,11 +127,11 @@ public class ApiAutomationService {
         return userMapper.selectByPrimaryKey(id);
     }
 
-    public Map<String,Long> getModuleCount(String projectId) {
-        Map<String,Long> numbers = new HashMap<String, Long>();
+    public Map<String, Long> getModuleCount(String projectId) {
+        Map<String, Long> numbers = new HashMap<String, Long>();
         List<ApiDataCountResult> apiDataCountResults = extApiScenarioMapper.countModuleByProjectId(projectId);
-        for(ApiDataCountResult apiDataCountResult:apiDataCountResults){
-            numbers.put(apiDataCountResult.getGroupField(),apiDataCountResult.getCountNumber());
+        for (ApiDataCountResult apiDataCountResult : apiDataCountResults) {
+            numbers.put(apiDataCountResult.getGroupField(), apiDataCountResult.getCountNumber());
         }
         return numbers;
     }
@@ -1109,17 +1108,6 @@ public class ApiAutomationService {
 
     public String run(RunScenarioRequest request) {
         if (request.getConfig() != null) {
-            if (request.getConfig().getMode().equals(RunModeConstants.PARALLEL.toString())) {
-                // 校验并发数量
-                int count = 50;
-                BaseSystemConfigDTO dto = systemParameterService.getBaseInfo();
-                if (StringUtils.isNotEmpty(dto.getConcurrency())) {
-                    count = Integer.parseInt(dto.getConcurrency());
-                }
-                if (request.getIds().size() > count) {
-                    MSException.throwException("并发数量过大，请重新选择！");
-                }
-            }
             return this.modeRun(request);
         } else {
             return this.excute(request);

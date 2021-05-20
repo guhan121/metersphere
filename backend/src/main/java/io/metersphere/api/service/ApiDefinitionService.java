@@ -540,7 +540,7 @@ public class ApiDefinitionService {
     }
 
     /**
-     * 测试执行
+     * 测试执行 接口case最大并发100个 --- s
      *
      * @param request
      * @param bodyFiles
@@ -578,8 +578,7 @@ public class ApiDefinitionService {
             runMode = ApiRunMode.API_PLAN.name();
         }
         // 调用执行方法
-        jMeterService.runDefinition(request.getId(), hashTree, request.getReportId(), runMode);
-        //jMeterService.runTest(request.getId(), hashTree, runMode, request.getReportId() != null, null);
+        jMeterService.runSerial(request.getId(), hashTree, request.getReportId(), runMode,null);
         return request.getId();
     }
 

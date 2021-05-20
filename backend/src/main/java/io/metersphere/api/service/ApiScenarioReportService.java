@@ -56,6 +56,7 @@ public class ApiScenarioReportService {
     SqlSessionFactory sqlSessionFactory;
 
     public ApiScenarioReport complete(TestResult result, String runMode) {
+        LogUtil.debug("ApiScenarioReport.complete:" + runMode +"," +(result==null));
         // 更新场景
         if (result != null) {
             if (StringUtils.equals(runMode, ApiRunMode.SCENARIO_PLAN.name())) {

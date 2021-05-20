@@ -603,7 +603,7 @@ public class ApiTestCaseService {
                 String runMode = ApiRunMode.JENKINS.name();
 */
                 // 调用执行方法
-                jMeterService.runDefinition(request.getCaseId(), jmeterHashTree, request.getReportId(), request.getRunMode());
+                jMeterService.runSerial(request.getCaseId(), jmeterHashTree, request.getReportId(), request.getRunMode(),null);
 
             } catch (Exception ex) {
                 LogUtil.error(ex.getMessage());
@@ -622,7 +622,7 @@ public class ApiTestCaseService {
                 request.setTestPlanId(testPlanID);
                 HashTree jmeterHashTree = this.generateHashTree(request, apiCaseBolbs);
                 // 调用执行方法
-                jMeterService.runDefinition(id, jmeterHashTree, debugReportId, runMode);
+                jMeterService.runSerial(id, jmeterHashTree, debugReportId, runMode,null);
 
             } catch (Exception ex) {
                 LogUtil.error(ex.getMessage());

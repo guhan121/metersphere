@@ -338,8 +338,7 @@ public class JMeterThread implements Runnable, Interruptible {
                 log.info("Thread finished: {}", threadName);
                 try{
                     ThreadFileOutput.stopThreadOutputRedirect();
-                    this.engine.logText = this.bos.get().toByteArray();
-//                    new PrintStream(new FileOutputStream(FileDescriptor.out)).write(this.engine.logText);
+                    this.engine.logMap.put(this.getThreadName(),this.bos.get().toByteArray());
                 }catch (Exception e){
                     e.printStackTrace(new PrintStream(new FileOutputStream(FileDescriptor.out)));
                 }

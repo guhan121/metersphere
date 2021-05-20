@@ -1,22 +1,17 @@
 package io.metersphere.api.jmeter;
 
-import com.alibaba.fastjson.JSON;
-import io.metersphere.api.dto.RunRequest;
 import io.metersphere.api.dto.automation.RunModeConfig;
-import io.metersphere.api.dto.definition.request.MsTestPlan;
 import io.metersphere.api.dto.scenario.request.BodyFile;
 import io.metersphere.base.domain.JarConfig;
-import io.metersphere.base.domain.TestResource;
 import io.metersphere.commons.constants.ApiRunMode;
 import io.metersphere.commons.constants.RunModeConstants;
 import io.metersphere.commons.exception.MSException;
-import io.metersphere.commons.utils.*;
+import io.metersphere.commons.utils.CommonBeanFactory;
+import io.metersphere.commons.utils.CompressUtils;
+import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.config.JmeterProperties;
-import io.metersphere.dto.BaseSystemConfigDTO;
-import io.metersphere.dto.NodeDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.service.JarConfigService;
-import io.metersphere.service.SystemParameterService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.config.Arguments;
@@ -24,29 +19,24 @@ import org.apache.jmeter.config.CSVDataSet;
 import org.apache.jmeter.protocol.http.sampler.HTTPSamplerProxy;
 import org.apache.jmeter.protocol.http.util.HTTPFileArg;
 import org.apache.jmeter.save.SaveService;
+import org.apache.jmeter.threads.JMeterContextService;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.backend.BackendListener;
 import org.apache.jorphan.collections.HashTree;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.Field;
-import java.text.MessageFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class JMeterService {
@@ -69,15 +59,12 @@ public class JMeterService {
     }
 
     public void run(String testId, String debugReportId, InputStream is) {
-        init();
         try {
             Object scriptWrapper = SaveService.loadElement(is);
             HashTree testPlan = getHashTree(scriptWrapper);
             JMeterVars.addJSR223PostProcessor(testPlan);
             String runMode = StringUtils.isBlank(debugReportId) ? ApiRunMode.RUN.name() : ApiRunMode.DEBUG.name();
-            addBackendListener(testId, debugReportId, runMode, testPlan);
-            LocalRunner runner = new LocalRunner(testPlan);
-            runner.run(testId);
+            this.runSerial(testId, testPlan, debugReportId, runMode, null);
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(Translator.get("api_load_script_error"));
@@ -104,23 +91,7 @@ public class JMeterService {
         return (HashTree) field.get(scriptWrapper);
     }
 
-    private void addBackendListener(String testId, String debugReportId, String runMode, HashTree testPlan) {
-        BackendListener backendListener = new BackendListener();
-        backendListener.setName(testId);
-        Arguments arguments = new Arguments();
-        arguments.addArgument(APIBackendListenerClient.TEST_ID, testId);
-        if (StringUtils.isNotBlank(runMode)) {
-            arguments.addArgument("runMode", runMode);
-        }
-        if (StringUtils.isNotBlank(debugReportId)) {
-            arguments.addArgument("debugReportId", debugReportId);
-        }
-        backendListener.setArguments(arguments);
-        backendListener.setClassname(APIBackendListenerClient.class.getCanonicalName());
-        testPlan.add(testPlan.getArray()[0], backendListener);
-    }
-
-    private void addBackendListener(String testId, String debugReportId, String runMode, HashTree testPlan, RunModeConfig config) {
+    public static void addBackendListener(String testId, String debugReportId, String runMode, HashTree testPlan, RunModeConfig config) {
         BackendListener backendListener = new BackendListener();
         backendListener.setName(testId);
         Arguments arguments = new Arguments();
@@ -140,26 +111,45 @@ public class JMeterService {
         testPlan.add(testPlan.getArray()[0], backendListener);
     }
 
+    /*
+     * 立即启动测试线程测试；立即返回
+     * 适用于页面点击调试
+     */
     public void runDefinition(String testId, HashTree testPlan, String debugReportId, String runMode) {
-        LogUtil.info(MessageFormat.format("Tid:{3},testId:{0},debugReportId:{1},runMode:{2}", testId, debugReportId, runMode, Thread.currentThread().getId()));
-        try {
-            init();
-            addBackendListener(testId, debugReportId, runMode, testPlan);
-            LocalRunner runner = new LocalRunner(testPlan);
-            runner.run(testId);
-        } catch (Exception e) {
-            LogUtil.error(e.getMessage(), e);
-            MSException.throwException(Translator.get("api_load_script_error"));
-        }
+        startRunner(testId, testPlan, debugReportId, runMode, null);
     }
 
     public void runSerial(String testId, HashTree testPlan, String debugReportId, String runMode, RunModeConfig config) {
+        synchronized (JMeterService.class) {
+            while (true) {
+                int threadCounts = APIBackendListenerClient.getNumberOfThreads();
+                LogUtil.info(" -> run:[" + testId + "];["+debugReportId+"]" + Thread.currentThread().getId() + ";current:" + threadCounts + ";act:" + JMeterContextService.getNumberOfThreads());
+
+                if (threadCounts >= 50) {
+                    //如果当前测试线程大于50个则需要等待
+                    try {
+                        Thread.sleep(5000);
+                        LogUtil.info(String.format(" -> 当前线程数限制;休眠五秒 [%s]", testId));
+                    } catch (Exception ignored) {
+                    }
+                } else {
+                    break;
+                }
+            }
+            startRunner(testId, testPlan, debugReportId, runMode, config);
+        }
+    }
+
+    private void startRunner(String testId, HashTree testPlan, String debugReportId, String runMode, RunModeConfig config) {
         try {
             init();
+            APIBackendListenerClient.incrNumberOfThreads();
             addBackendListener(testId, debugReportId, runMode, testPlan, config);
             LocalRunner runner = new LocalRunner(testPlan);
-            runner.run(testId);
+            //SaveService.saveTree(testPlan, new FileOutputStream("/opt/metersphere/logs/metersphere/" + testId.replace("\"", "") + ".jmx"));
+            runner.run();
         } catch (Exception e) {
+            APIBackendListenerClient.decrNumberOfThreads();
             LogUtil.error(e.getMessage(), e);
             MSException.throwException(Translator.get("api_load_script_error"));
         }
@@ -306,65 +296,4 @@ public class JMeterService {
         return multipartFiles;
     }
 
-    public void runTest(String testId, HashTree hashTree, String runMode, boolean isDebug, RunModeConfig config) {
-        // 获取JMX使用到的附件
-        List<Object> multipartFiles = getMultipartFiles(hashTree);
-        // 获取JAR
-        List<Object> jarFiles = getJar();
-
-        // 获取可以执行的资源池
-        TestResource testResource = resourcePoolCalculation.getPool();
-
-        String configuration = testResource.getConfiguration();
-        NodeDTO node = JSON.parseObject(configuration, NodeDTO.class);
-        String nodeIp = node.getIp();
-        Integer port = node.getPort();
-
-        BaseSystemConfigDTO baseInfo = CommonBeanFactory.getBean(SystemParameterService.class).getBaseInfo();
-        // 占位符
-        String metersphereUrl = "http://localhost:8081";
-        if (baseInfo != null) {
-            metersphereUrl = baseInfo.getUrl();
-        }
-        // 检查≈地址是否正确
-        String jmeterPingUrl = metersphereUrl + "/jmeter/ping";
-        // docker 不能从 localhost 中下载文件
-        if (StringUtils.contains(metersphereUrl, "http://localhost")
-                || !UrlTestUtils.testUrlWithTimeOut(jmeterPingUrl, 1000)) {
-            MSException.throwException(Translator.get("run_load_test_file_init_error"));
-        }
-
-        String uri = String.format(BASE_URL + "/jmeter/api/run", nodeIp, port);
-        try {
-            RunRequest runRequest = new RunRequest();
-            runRequest.setTestId(testId);
-            runRequest.setDebug(isDebug);
-            runRequest.setRunMode(runMode);
-            runRequest.setConfig(config);
-            runRequest.setUserId(Objects.requireNonNull(SessionUtils.getUser()).getId());
-            runRequest.setJmx(new MsTestPlan().getJmx(hashTree));
-            MultiValueMap<String, Object> postParameters = new LinkedMultiValueMap<>();
-            postParameters.put("files", multipartFiles);
-            postParameters.put("jarFiles", jarFiles);
-            postParameters.add("request", JSON.toJSONString(runRequest));
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
-            HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(postParameters, headers);
-
-            String result = restTemplate.postForObject(uri, request, String.class);
-            // 删除零时压缩文件
-            /*if (CollectionUtils.isNotEmpty(jarFiles)) {
-                ByteArrayResource resource = (ByteArrayResource) jarFiles.get(0);
-                CompressUtils.deleteFile(resource.getFile().getPath());
-            }*/
-            if (result == null || !StringUtils.equals("SUCCESS", result)) {
-                MSException.throwException("执行失败：" + result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            MSException.throwException("Please check node-controller status.");
-        }
-    }
 }

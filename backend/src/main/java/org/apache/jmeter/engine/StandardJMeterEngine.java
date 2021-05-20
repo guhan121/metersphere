@@ -18,11 +18,7 @@
 package org.apache.jmeter.engine;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -80,7 +76,8 @@ public class StandardJMeterEngine implements JMeterEngine, Runnable {
 
     /** Whether to call System.exit(0) unconditionally at end of non-GUI test */
     private static final boolean SYSTEM_EXIT_FORCED = JMeterUtils.getPropDefault("jmeterengine.force.system.exit", false);
-    public byte[] logText;
+
+    public Map<String,byte[]> logMap = new HashMap<>();
 
     /** Flag to show whether test is running. Set to false to stop creating more threads. */
     private volatile boolean running = false;

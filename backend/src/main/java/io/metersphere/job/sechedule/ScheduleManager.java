@@ -45,6 +45,9 @@ public class ScheduleManager {
                 .startNow().build();
 
         scheduler.scheduleJob(jd, trigger);
+        if (!scheduler.isStarted()){
+            scheduler.start();
+        }
     }
 
     public void addSimpleJob(JobKey jobKey, TriggerKey triggerKey, Class<? extends Job> cls, int repeatIntervalTime) throws SchedulerException {
@@ -82,6 +85,9 @@ public class ScheduleManager {
             CronTrigger trigger = (CronTrigger) triggerBuilder.build();
 
             scheduler.scheduleJob(jobDetail, trigger);
+            if (!scheduler.isStarted()){
+                scheduler.start();
+            }
 
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
