@@ -20,6 +20,11 @@
                     </template>
                     <ms-scenario-results v-on:requestResult="requestResult" :scenarios="fails"/>
                   </el-tab-pane>
+                  <el-tab-pane name="console">
+                    <div>
+                      <pre style="overflow:auto">{{consoleText}} </pre>
+                    </div>
+                  </el-tab-pane>
                 </el-tabs>
               </el-col>
               <el-col :span="16" style="margin-top: 40px;">
@@ -60,6 +65,7 @@ export default {
   },
   data() {
     return {
+      consoleText: '',
       activeName: "total",
       content: {},
       report: {},
@@ -104,6 +110,7 @@ export default {
             if (this.isNotRunning) {
               try {
                 this.content = JSON.parse(this.report.content);
+                this.consoleText = this.content.scenarios[0].requestResults[0].responseResult.console;
               } catch (e) {
                 // console.log(this.report.scenarioDefinition)
                 throw e;

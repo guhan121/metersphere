@@ -11,9 +11,9 @@
           <pre>{{ response.headers }}</pre>
         </el-tab-pane>
 
-        <el-tab-pane :label="$t('api_test.definition.request.console')" name="console" class="pane">
-          <pre>{{response.console}}</pre>
-        </el-tab-pane>
+<!--        <el-tab-pane :label="$t('api_test.definition.request.console')" name="console" class="pane">-->
+<!--          <pre>{{response.console}}</pre>-->
+<!--        </el-tab-pane>-->
 
         <el-tab-pane :label="$t('api_report.assertions')" name="assertions" class="pane assertions">
           <ms-assertion-results :assertions="response.assertions"/>
@@ -142,7 +142,7 @@
   .text-container .pane {
     background-color: #F5F5F5;
     padding: 0 10px;
-    height: 250px;
+    height: 300px;
     overflow-y: auto;
   }
 

@@ -17,6 +17,11 @@
                   </template>
                   <ms-scenario-results v-on:requestResult="requestResult" :treeData="failsTreeNodes"/>
                 </el-tab-pane>
+                <el-tab-pane name="console" label="console">
+                  <div>
+                    <pre style="overflow:auto">{{consoleText}} </pre>
+                  </div>
+                </el-tab-pane>
               </el-tabs>
             </div>
             <ms-api-report-export v-if="reportExportVisible" id="apiTestReport" :title="report.testName"
@@ -52,6 +57,7 @@
     },
     data() {
       return {
+        consoleText: '',
         activeName: "total",
         content: {},
         report: {},
@@ -193,6 +199,8 @@
                   this.content = JSON.parse(this.report.content);
                   if (!this.content) {
                     this.content = {scenarios: []};
+                  } else {
+                    this.consoleText = this.content.scenarios[0].requestResults[0].responseResult.console;
                   }
                   this.formatResult(this.content);
                 } catch (e) {

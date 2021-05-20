@@ -202,11 +202,6 @@
         <el-tab-pane label="调试结果" name="Report" class="overflow-y">
           <ms-api-report-detail v-if="debugVisible" :report-id="reportIdCopy" :debug="true" :currentProjectId="projectId" @refresh="detailRefresh"/>
         </el-tab-pane>
-        <el-tab-pane label="控制台日志" name="Console" class="overflow-y">
-          <div>
-            <pre style="overflow:auto">{{consoleText}} </pre>
-          </div>
-        </el-tab-pane>
       </el-tabs>
 
 
@@ -253,11 +248,6 @@
           </el-tab-pane>
           <el-tab-pane label="调试结果" name="Report">
             <ms-api-report-detail v-if="debugVisible" :report-id="reportIdCopy" :debug="true" :currentProjectId="projectId" @refresh="detailRefresh"/>
-          </el-tab-pane>
-          <el-tab-pane label="控制台日志" name="Console">
-            <div>
-              <pre style="overflow:auto">{{consoleText}} </pre>
-            </div>
           </el-tab-pane>
         </el-tabs>
       </ms-drawer>
@@ -376,7 +366,6 @@
         debugData: {},
         reportId: "",
         reportIdCopy:'',
-        consoleText:'',
         activeName:'Steps',
         enableCookieShare: false,
         globalOptions: {
@@ -1211,13 +1200,6 @@
       detailRefresh(result) {
         // 把执行结果分发给各个请求
         this.debugResult = result;
-        //取第一个结果的控制台数据
-        if (result){
-          for (let [key, value] of result){
-            this.consoleText = value.responseResult.console;
-            break;
-          }
-        }
         this.sort()
       },
       fullScreen() {
@@ -1241,7 +1223,6 @@
       },
       shrinkTreeNode() {
         //改变每个节点的状态
-        console.log("----")
         for (let i in this.scenarioDefinition) {
           if (this.scenarioDefinition[i]) {
             if (this.expandedStatus && this.expandedNode.indexOf(this.scenarioDefinition[i].resourceId) === -1) {
