@@ -3,8 +3,8 @@
 	<property resource="application.properties"/>
 	<property file="/opt/metersphere/conf/metersphere.properties"/>
 	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
-		<encoder>
-			<pattern>%d %5p %40.40c:%4L - %m%n</pattern>
+		<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+			<layout class="io.metersphere.logger.FixWidthLayout" />
 		</encoder>
 	</appender>
 

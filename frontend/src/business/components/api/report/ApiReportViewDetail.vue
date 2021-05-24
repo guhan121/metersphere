@@ -22,7 +22,7 @@
                   </el-tab-pane>
                   <el-tab-pane name="console">
                     <div>
-                      <pre style="overflow:auto">{{consoleText}} </pre>
+                      <ms-code-edit :read-only="true" height="800px" :data="consoleText" :init="configLog"></ms-code-edit>
                     </div>
                   </el-tab-pane>
                 </el-tabs>
@@ -54,10 +54,12 @@ import MsApiReportExport from "./ApiReportExport";
 import MsApiReportViewHeader from "./ApiReportViewHeader";
 import {RequestFactory} from "../test/model/ScenarioModel";
 import {windowPrint} from "../../../../common/js/utils";
+import MsCodeEdit from "@/business/components/common/components/MsCodeEdit";
 
 export default {
   name: "MsApiReportViewDetail",
   components: {
+    MsCodeEdit,
     MsApiReportViewHeader,
     MsApiReportExport,
     MsMainContainer,
@@ -89,6 +91,9 @@ export default {
     }
   },
   methods: {
+    configLog(editor){
+      editor.setOption("wrap", "free");
+    },
     init() {
       this.loading = true;
       this.report = {};
@@ -196,7 +201,8 @@ export default {
 <style scoped>
 
 .report-container {
-  height: calc(100vh - 155px);
+  /*height: calc(100vh - 155px);*/
+  height: 100%;
   min-height: 600px;
   overflow-y: auto;
 }

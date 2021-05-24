@@ -874,7 +874,6 @@
                 }).then(() => {
                   this.activeName = "Report";
                   this.reportIdCopy = '';
-                  this.consoleText = '';
                 })
               })
 
