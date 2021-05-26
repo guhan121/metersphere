@@ -91,6 +91,7 @@
     },
     methods: {
       configLog(editor){
+        editor.setOption("showPrintMargin",false)
         editor.setOption("wrap", "free");
       },
       init() {
