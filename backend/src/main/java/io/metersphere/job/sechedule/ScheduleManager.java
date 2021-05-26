@@ -66,7 +66,7 @@ public class ScheduleManager {
     public void addCronJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, String cron, JobDataMap jobDataMap) {
         try {
 
-            LogUtil.info("addCronJob: " + triggerKey.getName() + "," + triggerKey.getGroup());
+            LogUtil.info("addCronJob: jobKey:" + jobKey.toString() + ",triggerKey:" + triggerKey.toString());
 
             JobBuilder jobBuilder = JobBuilder.newJob(jobClass).withIdentity(jobKey);
             if (jobDataMap != null) {
@@ -283,7 +283,7 @@ public class ScheduleManager {
      */
     public void addOrUpdateCronJob(JobKey jobKey, TriggerKey triggerKey, Class jobClass, String cron, JobDataMap jobDataMap) throws SchedulerException {
 
-        LogUtil.info("AddOrUpdateCronJob: " + jobKey.getName() + "," + triggerKey.getGroup());
+        LogUtil.info("AddOrUpdateCronJob: jobKey:" + jobKey.toString() + ",triggerKey:" + triggerKey.toString());
 
         if (scheduler.checkExists(triggerKey)) {
             modifyCronJobTime(triggerKey, cron);
