@@ -7,10 +7,7 @@ import io.metersphere.base.mapper.ext.ExtLoadTestReportDetailMapper;
 import io.metersphere.base.mapper.ext.ExtLoadTestReportMapper;
 import io.metersphere.commons.constants.*;
 import io.metersphere.commons.exception.MSException;
-import io.metersphere.commons.utils.CommonBeanFactory;
-import io.metersphere.commons.utils.LogUtil;
-import io.metersphere.commons.utils.ServiceUtils;
-import io.metersphere.commons.utils.SessionUtils;
+import io.metersphere.commons.utils.*;
 import io.metersphere.config.KafkaProperties;
 import io.metersphere.controller.request.OrderRequest;
 import io.metersphere.controller.request.QueryScheduleRequest;
@@ -31,6 +28,7 @@ import io.metersphere.service.ScheduleService;
 import io.metersphere.track.service.TestCaseService;
 import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -51,6 +49,8 @@ import java.util.stream.Collectors;
 public class PerformanceTestService {
     public static final String HEADERS = "timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect";
 
+    @Value("${kafka.enabled:false}")
+    private Boolean kafkaEnabled;
     @Resource
     private LoadTestMapper loadTestMapper;
     @Resource
@@ -79,8 +79,6 @@ public class PerformanceTestService {
     private TestCaseService testCaseService;
     @Resource
     private TestResourcePoolMapper testResourcePoolMapper;
-    @Resource
-    private LoadTestProducer loadTestProducer;
 
     public List<LoadTestDTO> list(QueryTestPlanRequest request) {
         request.setOrders(ServiceUtils.getDefaultOrder(request.getOrders()));
@@ -498,7 +496,10 @@ public class PerformanceTestService {
         } else {
             stopEngine(reportId);
             // 发送测试停止消息
-            loadTestProducer.sendMessage(reportId);
+            if (this.kafkaEnabled) {
+                LoadTestProducer loadTestProducer = SpringContextHolder.getBean(LoadTestProducer.class);
+                loadTestProducer.sendMessage(reportId);
+            }
             // 停止测试之后设置报告的状态
             performanceReportService.updateStatus(reportId, PerformanceTestStatus.Completed.name());
         }

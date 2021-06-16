@@ -2,12 +2,14 @@ package io.metersphere.performance.engine.producer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 
 @Service
+@ConditionalOnProperty(value = "kafka.enabled", matchIfMissing = false)
 public class LoadTestProducer {
     private static final String SEPARATOR = " ";
 

@@ -19,6 +19,7 @@ import io.metersphere.track.service.TestPlanReportService;
 import io.metersphere.track.service.TestPlanTestCaseService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@ConditionalOnProperty(value = "kafka.enabled", matchIfMissing = false)
 public class MsKafkaListener {
     public static final String TOPICS = "ms-api-exec-topic";
     public static final String CONSUME_ID = "ms-api-exec-consume";
