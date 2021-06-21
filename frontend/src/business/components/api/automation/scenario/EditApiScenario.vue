@@ -128,7 +128,7 @@
                 <!-- 调试部分 -->
                 <div class="ms-debug-div" @click="showAll">
                   <el-row style="margin: 5px">
-                    <el-col :span="6" class="ms-col-one ms-font">
+                    <el-col :span="4" class="ms-col-one ms-font">
                       <el-tooltip placement="bottom-start" effect="light">
                         <template v-slot:content>
                           <div>{{
@@ -173,10 +173,8 @@
                         <el-button :disabled="scenarioDefinition.length < 1" size="mini" icon="el-icon-refresh"
                                    v-prevent-re-click @click="getApiScenario"></el-button>
                       </el-tooltip>
-                      <font-awesome-icon class="alt-ico" :icon="['fa', 'expand-alt']" size="lg" @click="fullScreen"
-                                         v-tester/>
                       <el-tooltip class="item" effect="dark" :content="$t('commons.full_screen_editing')"
-                                  placement="top-start">
+                                  placement="top-center">
                         <font-awesome-icon class="alt-ico" :icon="['fa', 'expand-alt']" size="lg" @click="fullScreen"/>
                       </el-tooltip>
                     </el-col>
@@ -677,10 +675,6 @@ export default {
         case  ELEMENT_TYPE.LoopController:
           this.selectedTreeNode !== undefined ? this.selectedTreeNode.hashTree.push(new LoopController()) :
             this.scenarioDefinition.push(new LoopController());
-          break;
-        case ELEMENT_TYPE.TransactionController:
-          this.selectedTreeNode !== undefined ? this.selectedTreeNode.hashTree.push(new TransactionController()) :
-            this.scenarioDefinition.push(new TransactionController());
           break;
         case ELEMENT_TYPE.TransactionController:
           this.selectedTreeNode !== undefined ? this.selectedTreeNode.hashTree.push(new TransactionController()) :
