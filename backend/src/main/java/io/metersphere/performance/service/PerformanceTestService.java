@@ -1,5 +1,6 @@
 package io.metersphere.performance.service;
 
+import com.alibaba.fastjson.JSON;
 import io.metersphere.base.domain.*;
 import io.metersphere.base.mapper.*;
 import io.metersphere.base.mapper.ext.ExtLoadTestMapper;
@@ -20,6 +21,10 @@ import io.metersphere.dto.LoadTestDTO;
 import io.metersphere.dto.ScheduleDao;
 import io.metersphere.i18n.Translator;
 import io.metersphere.job.sechedule.PerformanceTestJob;
+import io.metersphere.log.utils.ReflexObjectUtil;
+import io.metersphere.log.vo.DetailColumn;
+import io.metersphere.log.vo.OperatingLogDetails;
+import io.metersphere.log.vo.performance.PerformanceReference;
 import io.metersphere.performance.dto.LoadTestExportJmx;
 import io.metersphere.performance.engine.Engine;
 import io.metersphere.performance.engine.EngineFactory;
@@ -112,21 +117,13 @@ public class PerformanceTestService {
         // delete load_test
         loadTestMapper.deleteByPrimaryKey(request.getId());
 
-        deleteFileByTestId(request.getId());
+        detachFileByTestId(request.getId());
     }
 
-    public void deleteFileByTestId(String testId) {
+    public void detachFileByTestId(String testId) {
         LoadTestFileExample loadTestFileExample = new LoadTestFileExample();
         loadTestFileExample.createCriteria().andTestIdEqualTo(testId);
-        final List<LoadTestFile> loadTestFiles = loadTestFileMapper.selectByExample(loadTestFileExample);
         loadTestFileMapper.deleteByExample(loadTestFileExample);
-
-        if (!CollectionUtils.isEmpty(loadTestFiles)) {
-            List<String> fileIds = loadTestFiles.stream().map(LoadTestFile::getFileId).collect(Collectors.toList());
-            LoadTestFileExample example3 = new LoadTestFileExample();
-            example3.createCriteria().andFileIdIn(fileIds);
-            loadTestFileMapper.deleteByExample(example3);
-        }
     }
 
     public String save(SaveTestPlanRequest request, List<MultipartFile> files) {
@@ -204,7 +201,8 @@ public class PerformanceTestService {
 
         final LoadTestWithBLOBs loadTest = new LoadTestWithBLOBs();
         loadTest.setUserId(SessionUtils.getUser().getId());
-        loadTest.setId(UUID.randomUUID().toString());
+        loadTest.setId(request.getId());
+        loadTest.setCreateUser(SessionUtils.getUserId());
         loadTest.setName(request.getName());
         loadTest.setProjectId(request.getProjectId());
         loadTest.setCreateTime(System.currentTimeMillis());
@@ -450,8 +448,14 @@ public class PerformanceTestService {
         checkQuota(request, true);
         // copy test
         LoadTestWithBLOBs copy = loadTestMapper.selectByPrimaryKey(request.getId());
+        String copyName = copy.getName() + " Copy";
+
+        if (StringUtils.length(copyName) > 30) {
+            MSException.throwException(Translator.get("load_test_name_length"));
+        }
+
         copy.setId(UUID.randomUUID().toString());
-        copy.setName(copy.getName() + " Copy");
+        copy.setName(copyName);
         copy.setCreateTime(System.currentTimeMillis());
         copy.setUpdateTime(System.currentTimeMillis());
         copy.setStatus(APITestStatus.Saved.name());
@@ -468,6 +472,7 @@ public class PerformanceTestService {
                 loadTestFileMapper.insert(loadTestFile);
             });
         }
+        request.setId(copy.getId());
     }
 
     public void updateSchedule(Schedule request) {
@@ -615,5 +620,20 @@ public class PerformanceTestService {
         LoadTestReportExample example = new LoadTestReportExample();
         example.createCriteria().andTestIdEqualTo(testId);
         return loadTestReportMapper.countByExample(example);
+    }
+
+    public String getLogDetails(String id) {
+        LoadTestWithBLOBs loadTest = loadTestMapper.selectByPrimaryKey(id);
+        if (loadTest != null) {
+            String loadConfiguration = loadTest.getLoadConfiguration();
+            if (StringUtils.isNotEmpty(loadConfiguration)) {
+                loadConfiguration = "{\"" + "压力配置" + "\":" + loadConfiguration + "}";
+            }
+            loadTest.setLoadConfiguration(loadConfiguration);
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(loadTest, PerformanceReference.performanceColumns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(loadTest.getId()), loadTest.getProjectId(), loadTest.getName(), loadTest.getCreateUser(), columns);
+            return JSON.toJSONString(details);
+        }
+        return null;
     }
 }

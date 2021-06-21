@@ -23,8 +23,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class ZentaoPlatform extends AbstractIssuePlatform {
     /**
@@ -45,6 +47,10 @@ public class ZentaoPlatform extends AbstractIssuePlatform {
     public ZentaoPlatform(IssuesRequest issuesRequest) {
         super(issuesRequest);
         String config = getPlatformConfig(IssuesManagePlatform.Zentao.toString());
+        // todo
+        if (StringUtils.isBlank(config)) {
+            MSException.throwException("未集成禅道平台!");
+        }
         JSONObject object = JSON.parseObject(config);
         this.account = object.getString("account");
         this.password = object.getString("password");
@@ -72,9 +78,6 @@ public class ZentaoPlatform extends AbstractIssuePlatform {
     public List<IssuesDao> getIssue(IssuesRequest issuesRequest) {
         List<IssuesDao> list = new ArrayList<>();
 
-//        TestCaseIssuesExample example = new TestCaseIssuesExample();
-//        example.createCriteria().andTestCaseIdEqualTo(testCaseId);
-
         issuesRequest.setPlatform(IssuesManagePlatform.Zentao.toString());
 
 
@@ -85,9 +88,10 @@ public class ZentaoPlatform extends AbstractIssuePlatform {
             issues = extIssuesMapper.getIssuesByCaseId(issuesRequest);
         }
 
-        List<String> issuesIds = issues.stream().map(Issues::getId).collect(Collectors.toList());
-        issuesIds.forEach(issuesId -> {
+        issues.forEach(item -> {
+            String issuesId = item.getId();
             IssuesDao dto = getZentaoIssues(issuesId);
+            dto.setNum(item.getNum());
             if (StringUtils.isBlank(dto.getId())) {
                 // 缺陷不存在，解除用例和缺陷的关联
                 TestCaseIssuesExample issuesExample = new TestCaseIssuesExample();

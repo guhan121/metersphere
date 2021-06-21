@@ -18,8 +18,11 @@
                       @blur="isShowInput = false" :placeholder="$t('commons.input_name')" ref="nameEdit" :disabled="data.disabled"/>
           </span>
           <span :class="isMax?'ms-step-name':'scenario-name'" v-else>
-            {{data.name}}
-            <i class="el-icon-edit" style="cursor:pointer" @click="editName" v-tester v-if="data.referenced!='REF' && !data.disabled" @click.stop/>
+            <el-tooltip placement="top" :content="data.name">
+              <span>{{data.name}}</span>
+            </el-tooltip>
+            <i class="el-icon-edit" style="cursor:pointer;" @click="editName"
+               v-if="data.referenced!='REF' && !data.disabled" @click.stop/>
           </span>
         </slot>
         <slot name="behindHeaderLeft" v-if="!isMax"></slot>
@@ -225,5 +228,14 @@
     min-inline-size: 0px;
     border: 0px;
   }
-
+  .ms-step-name-width {
+    display: inline-block;
+    margin: 0 5px;
+    overflow-x: hidden;
+    padding-bottom: 0;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap;
+    width: 400px;
+  }
 </style>

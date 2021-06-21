@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSONObject;
 import io.metersphere.api.dto.scenario.request.BodyFile;
 import io.metersphere.commons.json.JSONSchemaGenerator;
 import io.metersphere.commons.utils.FileUtils;
-import io.metersphere.commons.utils.LogUtil;
 import io.metersphere.commons.utils.ScriptEngineUtils;
 import lombok.Data;
 import org.apache.commons.collections4.CollectionUtils;
@@ -24,6 +23,7 @@ public class Body {
     private List<KeyValue> kvs;
     private List<KeyValue> binary;
     private Object jsonSchema;
+    private String tmpFilePath;
 
     public final static String KV = "KeyValue";
     public final static String FORM_DATA = "Form Data";
@@ -127,7 +127,15 @@ public class Body {
         if (files != null) {
             files.forEach(file -> {
                 String paramName = keyValue.getName() == null ? requestId : keyValue.getName();
-                String path = FileUtils.BODY_FILE_DIR + '/' + file.getId() + '_' + file.getName();
+                String path = null;
+                if (StringUtils.isNotBlank(file.getId())) {
+                    // 旧数据
+                    path = FileUtils.BODY_FILE_DIR + '/' + file.getId() + '_' + file.getName();
+                } else if (StringUtils.isNotBlank(this.tmpFilePath)) {
+                    path = FileUtils.BODY_FILE_DIR + '/' + this.tmpFilePath + '/' + file.getName();
+                } else {
+                    path = FileUtils.BODY_FILE_DIR + '/' + requestId + '/' + file.getName();
+                }
                 String mimetype = keyValue.getContentType();
                 list.add(new HTTPFileArg(path, paramName, mimetype));
             });
@@ -161,5 +169,4 @@ public class Body {
         this.binary = new ArrayList<>();
         this.binary.add(new KeyValue());
     }
-
 }

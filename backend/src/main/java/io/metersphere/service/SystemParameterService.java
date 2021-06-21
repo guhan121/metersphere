@@ -1,5 +1,6 @@
 package io.metersphere.service;
 
+import com.alibaba.fastjson.JSON;
 import io.metersphere.api.service.ApiTestEnvironmentService;
 import io.metersphere.base.domain.*;
 import io.metersphere.base.mapper.SystemHeaderMapper;
@@ -14,6 +15,10 @@ import io.metersphere.controller.request.HeaderRequest;
 import io.metersphere.dto.BaseSystemConfigDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.ldap.domain.LdapInfo;
+import io.metersphere.log.utils.ReflexObjectUtil;
+import io.metersphere.log.vo.DetailColumn;
+import io.metersphere.log.vo.OperatingLogDetails;
+import io.metersphere.log.vo.system.SystemReference;
 import io.metersphere.notice.domain.MailInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -181,6 +186,8 @@ public class SystemParameterService {
             }
             example.clear();
         });
+
+
     }
 
     public LdapInfo getLdapInfo(String type) {
@@ -232,6 +239,9 @@ public class SystemParameterService {
                 }
                 if (StringUtils.equals(param.getParamKey(), ParamConstants.BASE.CONCURRENCY.getValue())) {
                     baseSystemConfigDTO.setConcurrency(param.getParamValue());
+                }
+                if (StringUtils.equals(param.getParamKey(), ParamConstants.BASE.PROMETHEUS_HOST.getValue())) {
+                    baseSystemConfigDTO.setPrometheusHost(param.getParamValue());
                 }
             }
         }
@@ -286,5 +296,39 @@ public class SystemParameterService {
             return list.get(0);
         }
         return null;
+    }
+
+    public String getLogDetails() {
+        LdapInfo ldapInfo = this.getLdapInfo(ParamConstants.Classify.LDAP.getValue());
+        if (ldapInfo != null) {
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(ldapInfo, SystemReference.ldapColumns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(ldapInfo.getUrl()), null, "LDAP设置", null, columns);
+            return JSON.toJSONString(details);
+        }
+        return null;
+    }
+
+    public String getMailLogDetails() {
+        MailInfo mailInfo = this.mailInfo(ParamConstants.Classify.MAIL.getValue());
+        if (mailInfo != null) {
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(mailInfo, SystemReference.mailColumns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(mailInfo.getAccount()), null, "邮件设置", null, columns);
+            return JSON.toJSONString(details);
+        }
+        return null;
+    }
+
+    public String getBaseLogDetails() {
+        BaseSystemConfigDTO configDTO = this.getBaseInfo();
+        if (configDTO != null) {
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(configDTO, SystemReference.baseColumns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(configDTO.getUrl()), null, "基本配置", null, columns);
+            return JSON.toJSONString(details);
+        }
+        return null;
+    }
+
+    public void saveBaseurl(String baseurl) {
+        extSystemParameterMapper.saveBaseurl(baseurl);
     }
 }

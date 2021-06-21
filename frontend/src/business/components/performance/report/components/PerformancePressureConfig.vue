@@ -288,30 +288,34 @@ export default {
         return;
       }
       let threadGroups = [];
-      this.result = this.$get('/performance/report/get-jmx-content/' + this.report.id, (response) => {
-        let d = response.data;
-        threadGroups = threadGroups.concat(findThreadGroup(d.jmx, d.name));
-        threadGroups.forEach(tg => {
-          tg.options = {};
-        });
-        this.threadGroups = threadGroups;
-        this.getLoadConfig();
-
-        // 兼容数据
-        if (!threadGroups || threadGroups.length === 0) {
-          this.result = this.$get('/performance/get-jmx-content/' + this.report.testId, (response) => {
-            response.data.forEach(d => {
-              threadGroups = threadGroups.concat(findThreadGroup(d.jmx, d.name));
-              threadGroups.forEach(tg => {
-                tg.options = {};
-              });
-              this.threadGroups = threadGroups;
-              this.getLoadConfig();
-            });
+      this.result = this.$get('/performance/report/get-jmx-content/' + this.report.id)
+        .then((response) => {
+          let d = response.data.data;
+          threadGroups = threadGroups.concat(findThreadGroup(d.jmx, d.name));
+          threadGroups.forEach(tg => {
+            tg.options = {};
           });
-        }
+          this.threadGroups = threadGroups;
+          this.getLoadConfig();
 
-      });
+          // 兼容数据
+          if (!threadGroups || threadGroups.length === 0) {
+            this.result = this.$get('/performance/get-jmx-content/' + this.report.testId)
+              .then((response) => {
+                response.data.data.forEach(d => {
+                  threadGroups = threadGroups.concat(findThreadGroup(d.jmx, d.name));
+                  threadGroups.forEach(tg => {
+                    tg.options = {};
+                  });
+                  this.threadGroups = threadGroups;
+                  this.getLoadConfig();
+                });
+              })
+              .catch(() => {
+              });
+          }
+        }).catch(() => {
+        });
     },
     calculateTotalChart() {
       let handler = this;

@@ -618,7 +618,7 @@ public class JmeterDocumentParser implements DocumentParser {
         // 清空child
         removeChildren(backendListener);
         backendListener.appendChild(createStringProp(document, "classname", "io.github.rahulsinghai.jmeter.backendlistener.kafka.KafkaBackendClient"));
-        backendListener.appendChild(createStringProp(document, "QUEUE_SIZE", "5000"));
+        backendListener.appendChild(createStringProp(document, "QUEUE_SIZE", kafkaProperties.getQueueSize()));
         // elementProp
         Element elementProp = document.createElement("elementProp");
         elementProp.setAttribute("name", "arguments");
@@ -655,7 +655,6 @@ public class JmeterDocumentParser implements DocumentParser {
         // 添加关联关系 test.id test.name test.startTime test.reportId
         collectionProp.appendChild(createKafkaProp(document, "test.id", context.getTestId()));
         collectionProp.appendChild(createKafkaProp(document, "test.name", context.getTestName()));
-        collectionProp.appendChild(createKafkaProp(document, "test.startTime", context.getStartTime().toString()));
         collectionProp.appendChild(createKafkaProp(document, "test.reportId", context.getReportId()));
 
         elementProp.appendChild(collectionProp);
@@ -991,6 +990,24 @@ public class JmeterDocumentParser implements DocumentParser {
             Object o = ((List<?>) rampUps).get(0);
             ((List<?>) rampUps).remove(0);
             rampUp = o.toString();
+        }
+        Object deleteds = context.getProperty("deleted");
+        String deleted = "false";
+        if (deleteds instanceof List) {
+            Object o = ((List<?>) deleteds).get(0);
+            ((List<?>) deleteds).remove(0);
+            deleted = o.toString();
+        }
+        Object enableds = context.getProperty("enabled");
+        String enabled = "true";
+        if (enableds instanceof List) {
+            Object o = ((List<?>) enableds).get(0);
+            ((List<?>) enableds).remove(0);
+            enabled = o.toString();
+        }
+        threadGroup.setAttribute("enabled", enabled);
+        if (BooleanUtils.toBoolean(deleted)) {
+            threadGroup.setAttribute("enabled", "false");
         }
         Element elementProp = document.createElement("elementProp");
         elementProp.setAttribute("name", "ThreadGroup.main_controller");

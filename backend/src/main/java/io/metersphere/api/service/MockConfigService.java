@@ -328,24 +328,7 @@ public class MockConfigService {
                                     if (bodyObj.containsKey("jsonSchema") && bodyObj.getJSONObject("jsonSchema").containsKey("properties")) {
                                         String bodyRetunStr = bodyObj.getJSONObject("jsonSchema").getJSONObject("properties").toJSONString();
                                         JSONObject bodyReturnObj = JSONObject.parseObject(bodyRetunStr);
-                                        Set<String> keySet = bodyReturnObj.keySet();
-                                        JSONObject returnObj = new JSONObject();
-                                        for (String key : keySet) {
-                                            try {
-                                                JsonSchemaReturnObj obj = bodyReturnObj.getObject(key, JsonSchemaReturnObj.class);
-                                                String values = obj.getMockValue();
-                                                if (StringUtils.isEmpty(values)) {
-                                                    values = "";
-                                                } else {
-                                                    try {
-                                                        values = values.startsWith("@") ? ScriptEngineUtils.calculate(values) : values;
-                                                    } catch (Exception e) {
-                                                    }
-                                                }
-                                                returnObj.put(key, values);
-                                            } catch (Exception e) {
-                                            }
-                                        }
+                                        JSONObject returnObj = this.parseJsonSchema(bodyReturnObj);
                                         returnStr = returnObj.toJSONString();
                                     }
                                 } else {
@@ -420,6 +403,79 @@ public class MockConfigService {
             e.printStackTrace();
         }
         return returnStr;
+    }
+
+    private JSONObject parseJsonSchema(JSONObject bodyReturnObj) {
+        JSONObject returnObj = new JSONObject();
+        if(bodyReturnObj == null){
+            return  returnObj;
+        }
+
+        Set<String> keySet = bodyReturnObj.keySet();
+        for (String key : keySet) {
+            try {
+                JsonSchemaReturnObj obj = bodyReturnObj.getObject(key, JsonSchemaReturnObj.class);
+                if(StringUtils.equals("object",obj.getType())) {
+                    JSONObject itemObj = this.parseJsonSchema(obj.getProperties());
+                    if (!itemObj.isEmpty()) {
+                        returnObj.put(key, itemObj);
+                    }
+                }else if(StringUtils.equals("array",obj.getType())){
+                    if(obj.getItems() != null){
+                        JSONObject itemObj = obj.getItems();
+                        if(itemObj.containsKey("type")){
+                            if(StringUtils.equals("object",itemObj.getString("type"))&& itemObj.containsKey("properties")){
+                                JSONObject arrayObj = itemObj.getJSONObject("properties");
+//                                Set<String> arrayKeys = arrayObj.keySet();
+//
+//                                JSONObject parseObj = new JSONObject();
+//                                for (String arrayKey : arrayKeys) {
+//                                    JsonSchemaReturnObj arrayItemObj = arrayObj.getObject(arrayKey, JsonSchemaReturnObj.class);
+//                                    String value = this.getMockValues(arrayItemObj.getMockValue());
+//                                    parseObj.put(arrayKey,value);
+//                                }
+                                JSONObject parseObj = this.parseJsonSchema(arrayObj);
+                                JSONArray array = new JSONArray();
+                                array.add(parseObj);
+                                returnObj.put(key, array);
+                            }else if(StringUtils.equals("string",itemObj.getString("type"))&& itemObj.containsKey("mock")){
+                                JsonSchemaReturnObj arrayObj = JSONObject.toJavaObject(itemObj,JsonSchemaReturnObj.class);
+                                String value = this.getMockValues(arrayObj.getMockValue());
+                                JSONArray array = new JSONArray();
+                                array.add(value);
+                                returnObj.put(key, array);
+                            }
+                        }
+                    }
+                }else {
+                    String values = obj.getMockValue();
+                    if (StringUtils.isEmpty(values)) {
+                        values = "";
+                    } else {
+                        try {
+                            values = values.startsWith("@") ? ScriptEngineUtils.calculate(values) : values;
+                        } catch (Exception e) {
+                        }
+                    }
+                    returnObj.put(key, values);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return returnObj;
+    }
+
+    private String getMockValues(String values) {
+        if (StringUtils.isEmpty(values)) {
+            values = "";
+        } else {
+            try {
+                values = values.startsWith("@") ? ScriptEngineUtils.calculate(values) : values;
+            } catch (Exception e) {
+            }
+        }
+        return values;
     }
 
     public MockExpectConfigWithBLOBs findMockExpectConfigById(String id) {
@@ -711,56 +767,66 @@ public class MockConfigService {
         return this.assemblyMockConfingResponse(configList);
     }
 
-    public String checkReturnWithMockExpectByBodyParam(String method, String projectId, HttpServletRequest
+    public String checkReturnWithMockExpectByBodyParam(String method, Project project, HttpServletRequest
             request, HttpServletResponse response) {
         String returnStr = "";
-        String urlSuffix = this.getUrlSuffix(projectId, request);
-        List<ApiDefinitionWithBLOBs> aualifiedApiList = apiDefinitionService.preparedUrl(projectId, method, urlSuffix, urlSuffix);
-        JSONObject paramMap = this.getPostParamMap(request);
-
-        List<String> apiIdList = aualifiedApiList.stream().map(ApiDefinitionWithBLOBs::getId).collect(Collectors.toList());
-        MockConfigResponse mockConfigData = this.findByApiIdList(apiIdList);
         boolean isMatch = false;
-        if (mockConfigData != null && mockConfigData.getMockExpectConfigList() != null) {
-            MockExpectConfigResponse finalExpectConfig = this.findExpectConfig(mockConfigData.getMockExpectConfigList(), paramMap);
-            if (finalExpectConfig != null) {
-                isMatch = true;
-                returnStr = this.updateHttpServletResponse(finalExpectConfig, response);
+        List<ApiDefinitionWithBLOBs> aualifiedApiList = new ArrayList<>();
+        if(project!=null){
+            String urlSuffix = this.getUrlSuffix(project.getSystemId(), request);
+            aualifiedApiList = apiDefinitionService.preparedUrl(project.getId(), method, urlSuffix, urlSuffix);
+            JSONObject paramMap = this.getPostParamMap(request);
+
+            List<String> apiIdList = aualifiedApiList.stream().map(ApiDefinitionWithBLOBs::getId).collect(Collectors.toList());
+            MockConfigResponse mockConfigData = this.findByApiIdList(apiIdList);
+
+            if (mockConfigData != null && mockConfigData.getMockExpectConfigList() != null) {
+                MockExpectConfigResponse finalExpectConfig = this.findExpectConfig(mockConfigData.getMockExpectConfigList(), paramMap);
+                if (finalExpectConfig != null) {
+                    isMatch = true;
+                    returnStr = this.updateHttpServletResponse(finalExpectConfig, response);
+                }
             }
         }
+
         if (!isMatch) {
             returnStr = this.updateHttpServletResponse(aualifiedApiList, response);
         }
         return returnStr;
     }
 
-    public String checkReturnWithMockExpectByUrlParam(String get, String projectId, HttpServletRequest
+    public String checkReturnWithMockExpectByUrlParam(String method, Project project, HttpServletRequest
             request, HttpServletResponse response) {
         String returnStr = "";
-        String urlSuffix = this.getUrlSuffix(projectId, request);
-        List<ApiDefinitionWithBLOBs> aualifiedApiList = apiDefinitionService.preparedUrl(projectId, "GET", null, urlSuffix);
-
-        /**
-         * GET/DELETE 这种通过url穿参数的接口，在接口路径相同的情况下可能会出现这样的情况：
-         *  api1: /api/{name}   参数 name = "ABC"
-         *  api2: /api/{testParam} 参数 testParam = "ABC"
-         *
-         *  匹配预期Mock的逻辑为： 循环apiId进行筛选，直到筛选到预期Mock。如果筛选不到，则取Api的响应模版来进行返回
-         */
         boolean isMatch = false;
-        for (ApiDefinitionWithBLOBs api : aualifiedApiList) {
-            JSONObject paramMap = this.getGetParamMap(urlSuffix, api, request);
+        List<ApiDefinitionWithBLOBs> aualifiedApiList = new ArrayList<>();
+        if(project != null){
+            String urlSuffix = this.getUrlSuffix(project.getSystemId(), request);
+            aualifiedApiList = apiDefinitionService.preparedUrl(project.getId(), method, null, urlSuffix);
 
-            MockConfigResponse mockConfigData = this.findByApiId(api.getId());
-            if (mockConfigData != null && mockConfigData.getMockExpectConfigList() != null) {
-                MockExpectConfigResponse finalExpectConfig = this.findExpectConfig(mockConfigData.getMockExpectConfigList(), paramMap);
-                if (finalExpectConfig != null) {
-                    returnStr = this.updateHttpServletResponse(finalExpectConfig, response);
-                    isMatch = true;
-                    break;
+            /**
+             * GET/DELETE 这种通过url穿参数的接口，在接口路径相同的情况下可能会出现这样的情况：
+             *  api1: /api/{name}   参数 name = "ABC"
+             *  api2: /api/{testParam} 参数 testParam = "ABC"
+             *
+             *  匹配预期Mock的逻辑为： 循环apiId进行筛选，直到筛选到预期Mock。如果筛选不到，则取Api的响应模版来进行返回
+             */
+
+            for (ApiDefinitionWithBLOBs api : aualifiedApiList) {
+                JSONObject paramMap = this.getGetParamMap(urlSuffix, api, request);
+
+                MockConfigResponse mockConfigData = this.findByApiId(api.getId());
+                if (mockConfigData != null && mockConfigData.getMockExpectConfigList() != null) {
+                    MockExpectConfigResponse finalExpectConfig = this.findExpectConfig(mockConfigData.getMockExpectConfigList(), paramMap);
+                    if (finalExpectConfig != null) {
+                        returnStr = this.updateHttpServletResponse(finalExpectConfig, response);
+                        isMatch = true;
+                        break;
+                    }
                 }
             }
         }
+
         if (!isMatch) {
             returnStr = this.updateHttpServletResponse(aualifiedApiList, response);
         }

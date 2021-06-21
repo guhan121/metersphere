@@ -27,14 +27,19 @@
                     </el-col>
 
                     <el-col class="head-right" :span="20">
-                      <ms-previous-next-button :index="index" @pre="handlePre" @next="saveCase(true)" :list="testCases"/>
+                      <ms-previous-next-button :index="index" @pre="handlePre" @next="saveCase(true, true)" :list="testCases"/>
+                      <el-button class="save-btn" type="primary" size="mini" :disabled="isReadOnly" @click="saveCase(true)">
+                        {{$t('test_track.save')}} & 下一条
+                      </el-button>
                     </el-col>
 
                   </el-row>
 
-                  <el-row style="margin-top: 0;">
+                  <el-row class="head-bar">
                     <el-col>
-                      <el-divider content-position="left">{{ testCase.name }}</el-divider>
+                      <el-divider content-position="left">
+                        <el-button type="text" @click="openTestTestCase(testCase)">{{ testCase.name }}</el-button>
+                      </el-divider>
                     </el-col>
                   </el-row>
                 </el-header>
@@ -75,13 +80,13 @@
                     </el-form>
 
                     <form-rich-text-item :label-width="formLabelWidth" :disabled="true" :title="$t('test_track.case.prerequisite')" :data="testCase" prop="prerequisite"/>
-                    <step-change-item :label-width="formLabelWidth" :form="testCase"/>
+                    <step-change-item :disable="true" :label-width="formLabelWidth" :form="testCase"/>
                     <test-plan-case-step-results-item :label-width="formLabelWidth" :is-read-only="isReadOnly" v-if="testCase.stepModel === 'STEP'" :test-case="testCase"/>
                     <form-rich-text-item :label-width="formLabelWidth" v-if="testCase.stepModel === 'TEXT'" :disabled="true" :title="$t('test_track.case.step_desc')" :data="testCase" prop="stepDescription"/>
                     <form-rich-text-item :label-width="formLabelWidth" v-if="testCase.stepModel === 'TEXT'" :disabled="true" :title="$t('test_track.case.expected_results')" :data="testCase" prop="expectedResult"/>
                     <form-rich-text-item :label-width="formLabelWidth" v-if="testCase.stepModel === 'TEXT'" :title="$t('test_track.plan_view.actual_result')" :data="testCase" prop="actualResult"/>
 
-                    <test-case-edit-other-info v-if="otherInfoActive" @openTest="openTest" :read-only="true" :is-test-plan="true" :project-id="projectId" :form="testCase" :case-id="testCase.caseId" ref="otherInfo"/>
+                    <test-case-edit-other-info :plan-id="testCase.planId" v-if="otherInfoActive" @openTest="openTest" :read-only="true" :is-test-plan="true" :project-id="projectId" :form="testCase" :case-id="testCase.caseId" ref="otherInfo"/>
                   </el-form>
                 </div>
 
@@ -120,7 +125,7 @@ import ApiTestDetail from "../test/ApiTestDetail";
 import ApiTestResult from "../test/ApiTestResult";
 import PerformanceTestDetail from "../test/PerformanceTestDetail";
 import PerformanceTestResult from "../test/PerformanceTestResult";
-import {getUUID, listenGoBack, removeGoBackListener} from "@/common/js/utils";
+import {getCurrentProjectID, getUUID, hasPermission, listenGoBack, removeGoBackListener} from "@/common/js/utils";
 import TestCaseAttachment from "@/business/components/track/case/components/TestCaseAttachment";
 import CaseComment from "@/business/components/track/case/components/CaseComment";
 import MsPreviousNextButton from "../../../../../common/components/MsPreviousNextButton";
@@ -183,7 +188,8 @@ export default {
       testCaseTemplate: {},
       formLabelWidth: "100px",
       isCustomFiledActive: false,
-      otherInfoActive: true
+      otherInfoActive: true,
+      isReadOnly: false,
     };
   },
   props: {
@@ -192,15 +198,11 @@ export default {
     },
     searchParam: {
       type: Object
-    },
-    isReadOnly: {
-      type: Boolean,
-      default: false
     }
   },
   computed: {
     projectId() {
-      return this.$store.state.projectId;
+      return getCurrentProjectID();
     },
     systemNameMap() {
       return SYSTEM_FIELD_NAME_MAP;
@@ -267,7 +269,7 @@ export default {
         }
       };
     },
-    saveCase(next) {
+    saveCase(next, noTip) {
       let param = {};
       param.id = this.testCase.id;
       param.status = this.testCase.status;
@@ -293,7 +295,9 @@ export default {
         this.$request(option, (response) => {
 
         });
-        this.$success(this.$t('commons.save_success'));
+        if (!noTip) {
+          this.$success(this.$t('commons.save_success') + ' -> ' + this.$t('test_track.plan_view.next_case'));
+        }
         this.updateTestCases(param);
         this.setPlanStatus(this.testCase.planId);
         if (next && this.index < this.testCases.length - 1) {
@@ -335,7 +339,11 @@ export default {
       this.result = this.$get('/test/plan/case/get/' + testCase.id, response => {
         let item = {};
         Object.assign(item, response.data);
-        item.results = JSON.parse(item.results);
+        if (item.results) {
+          item.results = JSON.parse(item.results);
+        } else if (item.steps) {
+          item.results = [item.steps.length];
+        }
         if (item.issues) {
           item.issues = JSON.parse(item.issues);
         } else {
@@ -377,6 +385,8 @@ export default {
       this.activeTab = 'detail';
       this.hasTapdId = false;
       this.hasZentaoId = false;
+      this.isReadOnly = !hasPermission('PROJECT_TRACK_PLAN:READ+RELEVANCE_OR_CANCEL');
+
       listenGoBack(this.handleClose);
       let initFuc = this.initData;
       getTemplate('field/template/case/get/relate/', this)
@@ -384,6 +394,9 @@ export default {
           this.testCaseTemplate = template;
           initFuc(testCase);
         });
+      if (this.$refs.otherInfo) {
+        this.$refs.otherInfo.reset();
+      }
     },
     testRun(reportId) {
       this.testCase.reportId = reportId;
@@ -427,11 +440,20 @@ export default {
           break;
         }
         case "automation": {
-          let automationData = this.$router.resolve({name:'ApiAutomation',params:{redirectID:getUUID(),dataType:"scenario",dataSelectRange:'edit:'+id}});
+          let automationData = this.$router.resolve({
+            name: 'ApiAutomation',
+            params: {redirectID: getUUID(), dataType: "scenario", dataSelectRange: 'edit:' + id}
+          });
           window.open(automationData.href, '_blank');
           break;
         }
       }
+    },
+    openTestTestCase(item) {
+      let TestCaseData = this.$router.resolve(
+        {path: '/track/case/all', query: {redirectID: getUUID(), dataType: "testCase", dataSelectRange: item.caseId}}
+      );
+      window.open(TestCaseData.href, '_blank');
     },
     addPLabel(str) {
       return "<p>" + str + "</p>";
@@ -516,5 +538,9 @@ p {
 .issues-popover {
   height: 550px;
   overflow: auto;
+}
+
+.save-btn {
+  margin-left: 10px;
 }
 </style>

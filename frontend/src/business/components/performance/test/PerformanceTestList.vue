@@ -3,14 +3,16 @@
     <ms-main-container>
       <el-card class="table-card" v-loading="result.loading">
         <template v-slot:header>
-          <ms-table-header :is-tester-permission="true" :condition.sync="condition" @search="search"
+          <ms-table-header :condition.sync="condition" @search="search"
                            :title="$t('commons.test')"
+                           :create-permission="['PROJECT_PERFORMANCE_TEST:READ+CREATE']"
                            @create="create" :createTip="$t('load_test.create')"/>
         </template>
 
         <el-table border :data="tableData" class="adjust-table test-content"
                   @sort-change="sort"
                   @filter-change="filter"
+                  :height="screenHeight"
         >
           <el-table-column
             prop="num"
@@ -76,7 +78,9 @@
             width="150"
             :label="$t('commons.operating')">
             <template v-slot:default="scope">
-              <ms-table-operators :buttons="buttons" :row="scope.row"/>
+              <div>
+                <ms-table-operators :buttons="buttons" :row="scope.row"/>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -97,7 +101,6 @@ import MsTableOperators from "../../common/components/MsTableOperators";
 import {getCurrentProjectID, getCurrentWorkspaceId} from "@/common/js/utils";
 import MsTableHeader from "../../common/components/MsTableHeader";
 import {TEST_CONFIGS} from "../../common/components/search/search-components";
-import {LIST_CHANGE, PerformanceEvent} from "@/business/components/common/head/ListEvent";
 import {_filter, _sort} from "@/common/js/tableUtils";
 
 export default {
@@ -128,13 +131,16 @@ export default {
       buttons: [
         {
           tip: this.$t('commons.edit'), icon: "el-icon-edit",
-          exec: this.handleEdit
+          exec: this.handleEdit,
+          permissions: ['PROJECT_PERFORMANCE_TEST:READ+EDIT']
         }, {
           tip: this.$t('commons.copy'), icon: "el-icon-copy-document", type: "success",
-          exec: this.handleCopy
+          exec: this.handleCopy,
+          permissions: ['PROJECT_PERFORMANCE_TEST:READ+COPY']
         }, {
           tip: this.$t('commons.delete'), icon: "el-icon-delete", type: "danger",
-          exec: this.handleDelete
+          exec: this.handleDelete,
+          permissions: ['PROJECT_PERFORMANCE_TEST:READ+DELETE']
         }
       ],
       statusFilters: [
@@ -146,6 +152,7 @@ export default {
         {text: 'Error', value: 'Error'}
       ],
       userFilters: [],
+      screenHeight: 'calc(100vh - 295px)',
     };
   },
   watch: {
@@ -165,7 +172,7 @@ export default {
   methods: {
     getMaintainerOptions() {
       let workspaceId = getCurrentWorkspaceId();
-      this.$post('/user/ws/member/tester/list', {workspaceId: workspaceId}, response => {
+      this.$post('/user/project/member/tester/list', {projectId: getCurrentProjectID()}, response => {
         this.userFilters = response.data.map(u => {
           return {text: u.name, value: u.id};
         });
@@ -224,8 +231,6 @@ export default {
       this.result = this.$post(this.deletePath, data, () => {
         this.$success(this.$t('commons.delete_success'));
         this.initTableData();
-        // 发送广播，刷新 head 上的最新列表
-        PerformanceEvent.$emit(LIST_CHANGE);
       });
     },
     sort(column) {

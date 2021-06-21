@@ -2,7 +2,7 @@
 
   <div>
     <div style="float: right;">
-      <el-button size="mini" @click="open">{{$t('test_track.case.import.click_upload')}}</el-button>
+      <el-button size="mini" @click="open" :disabled="isReadOnly">{{$t('test_track.case.import.click_upload')}}</el-button>
     </div>
     <div class="tip">{{ this.$t('commons.ssl.files') }}
     </div>
@@ -23,10 +23,12 @@
         </el-table-column>
         <el-table-column :label="$t('commons.operating')" width="100px">
           <template v-slot:default="{row}">
-            <ms-table-operator-button :tip="$t('commons.update')" icon="el-icon-edit"
-                                      type="primary" @exec="edit(row)"/>
-            <ms-table-operator-button :tip="$t('api_test.automation.remove')"
-                                      icon="el-icon-delete" @exec="remove(row)" type="danger" v-tester/>
+            <div>
+              <ms-table-operator-button :tip="$t('commons.update')" icon="el-icon-edit"
+                                        type="primary" @exec="edit(row)"/>
+              <ms-table-operator-button :tip="$t('api_test.automation.remove')"
+                                        icon="el-icon-delete" @exec="remove(row)" type="danger"/>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -74,6 +76,10 @@
     props: {
       sslConfig: new SSLConfig(),
       projectId: String,
+      isReadOnly: {
+        type: Boolean,
+        default: false
+      },
     },
     created() {
     },

@@ -3,7 +3,7 @@
              :destroy-on-close="true"
              :title="$t('load_test.exist_jmx')" width="70%"
              :visible.sync="loadFileVisible">
-    <ms-table-header :is-tester-permission="true" title="" :condition.sync="condition" @search="getProjectFiles"
+    <ms-table-header title="" :condition.sync="condition" @search="getProjectFiles"
                      :show-create="false">
       <template v-slot:button>
         <el-upload
@@ -19,7 +19,7 @@
           :on-exceed="handleExceed"
           :disabled="isReadOnly"
           :file-list="fileList">
-          <ms-table-button :is-tester-permission="true" icon="el-icon-upload2"
+          <ms-table-button icon="el-icon-upload2"
                            :content="$t('load_test.upload_jmx')"/>
         </el-upload>
         <el-upload
@@ -35,7 +35,7 @@
           :on-exceed="handleExceed"
           :disabled="isReadOnly"
           :file-list="fileList">
-          <ms-table-button :is-tester-permission="true" icon="el-icon-upload2"
+          <ms-table-button icon="el-icon-upload2"
                            :content="$t('load_test.upload_file')"/>
         </el-upload>
       </template>
@@ -76,17 +76,16 @@
             <el-tooltip effect="dark" :content="$t('project.upload_file_again')" placement="bottom">
               <el-button circle
                          type="success"
-                         :disabled="!checkoutTestManagerOrTestUser()"
                          icon="el-icon-upload"
                          @click="handleEdit(scope.row)"
                          size="mini"/>
             </el-tooltip>
           </el-upload>
-          <ms-table-operator-button :is-tester-permission="true"
-                                    icon="el-icon-delete"
-                                    type="danger"
-                                    :tip="$t('commons.delete')"
-                                    @exec="handleDelete(scope.row)">
+          <ms-table-operator-button
+            icon="el-icon-delete"
+            type="danger"
+            :tip="$t('commons.delete')"
+            @exec="handleDelete(scope.row)">
           </ms-table-operator-button>
         </template>
       </el-table-column>
@@ -103,7 +102,7 @@
 <script>
 import MsDialogFooter from "@/business/components/common/components/MsDialogFooter";
 import MsTablePagination from "@/business/components/common/pagination/TablePagination";
-import {checkoutTestManagerOrTestUser, getCurrentProjectID} from "@/common/js/utils";
+import {getCurrentProjectID} from "@/common/js/utils";
 import {findThreadGroup} from "@/business/components/performance/test/model/ThreadGroup";
 import MsTableButton from "@/business/components/common/components/MsTableButton";
 import axios from "axios";
@@ -121,6 +120,9 @@ export default {
     scenarios: Array,
     isReadOnly: Boolean,
   },
+  inject: [
+    'reload'
+  ],
   data() {
     return {
       loadFileVisible: false,
@@ -136,7 +138,6 @@ export default {
     };
   },
   methods: {
-    checkoutTestManagerOrTestUser,
     open(loadType) {
       this.loadFileVisible = true;
       this.loadType = loadType;
@@ -323,7 +324,7 @@ export default {
         this.getProjectFiles();
         // 刷新页面上的线程组
         if (this.tableData.filter(f => f.id === this.currentRow.id).length > 0) {
-          window.location.reload();
+          this.reload();
         }
         this.currentRow = null;
       });

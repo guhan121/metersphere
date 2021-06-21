@@ -4,10 +4,14 @@
     <slot name="header"></slot>
 
     <ms-node-tree
+      :is-display="getIsRelevance"
       v-loading="result.loading"
       :tree-nodes="data"
       :allLabel="$t('commons.all_module_title')"
       :type="isReadOnly ? 'view' : 'edit'"
+      :delete-permission="['PROJECT_API_SCENARIO:READ+DELETE']"
+      :add-permission="['PROJECT_API_SCENARIO:READ+CREATE']"
+      :update-permission="['PROJECT_API_SCENARIO:READ+EDIT']"
       @add="add"
       @edit="edit"
       @drag="drag"
@@ -44,6 +48,7 @@
   import ModuleTrashButton from "../../definition/components/module/ModuleTrashButton";
   import ApiImport from "./common/ScenarioImport";
   import MsSearchBar from "@/business/components/common/components/search/MsSearchBar";
+  import {getCurrentProjectID} from "@/common/js/utils";
 
   export default {
     name: 'MsApiScenarioModule',
@@ -64,7 +69,8 @@
       },
       showOperator: Boolean,
       relevanceProjectId: String,
-      planId: String
+      planId: String,
+      pageSource:String,
     },
     computed: {
       isPlanModel() {
@@ -74,11 +80,19 @@
         return this.relevanceProjectId ? true : false;
       },
       projectId() {
-        return this.$store.state.projectId
+        return getCurrentProjectID();
       },
+      getIsRelevance(){
+        if(this.pageSource !== 'scenario'){
+          return this.openType;
+        }else {
+          return "scenario";
+        }
+      }
     },
     data() {
       return {
+        openType: 'relevance',
         result: {},
         condition: {
           filterText: "",
@@ -89,14 +103,17 @@
         operators: [
           {
             label: this.$t('api_test.automation.add_scenario'),
-            callback: this.addScenario
+            callback: this.addScenario,
+            permissions: ['PROJECT_API_SCENARIO:READ+CREATE']
           },
           {
             label: this.$t('api_test.api_import.label'),
-            callback: this.handleImport
+            callback: this.handleImport,
+            permissions: ['PROJECT_API_SCENARIO:READ+IMPORT_SCENARIO']
           },
           {
             label: this.$t('report.export'),
+            permissions: ['PROJECT_API_SCENARIO:READ+EXPORT_SCENARIO'],
             children: [
               {
                 label: this.$t('report.export_to_ms_format'),
@@ -265,6 +282,7 @@
       },
       enableTrash() {
         this.condition.trashEnable = true;
+        this.$emit('enableTrash', this.condition.trashEnable);
       }
     }
   }

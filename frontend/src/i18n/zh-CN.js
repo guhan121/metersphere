@@ -1,5 +1,7 @@
 export default {
   commons: {
+    failure_continues: "失败继续",
+    full_screen_editing: "全屏编辑",
     yes: "是",
     no: "否",
     default: "默认值",
@@ -64,6 +66,7 @@ export default {
     email: '邮箱',
     phone: '电话',
     role: '角色',
+    group: '用户组',
     personal_info: '个人信息',
     api_keys: 'API Keys',
     quota: '配额管理',
@@ -91,7 +94,7 @@ export default {
     please_select: '请选择',
     search_by_name: '根据名称搜索',
     search_by_name_or_id: '根据 ID/名称 搜索',
-    search_by_id_name_tag: '根据 ID/名称/标签 搜索',
+    search_by_id_name_tag: '根据 ID/名称/标签/路径 搜索',
     personal_information: '个人信息',
     exit_system: '退出系统',
     verification: '验证',
@@ -157,6 +160,7 @@ export default {
     more_operator: "更多操作",
     mock: "Mock 设置",
     all_module_title: "全部模块",
+    create_user: '创建人',
     table: {
       select_tip: "已选中 {0} 条数据"
     },
@@ -279,6 +283,7 @@ export default {
     }
   },
   custom_field: {
+    add_option: '添加选项',
     case_status: '用例状态',
     case_maintainer: '责任人',
     case_priority: '用例等级',
@@ -292,9 +297,12 @@ export default {
     scene: '使用场景',
     attribute_type: '属性类型',
     field_name: '字段名',
+    field: '字段',
     field_remark: '字段备注',
     field_type: '字段类型',
     field_option: '选项值',
+    field_text: '选项内容',
+    field_value: '选项值',
     add_field: '添加字段',
     api_field_name: 'API字段名',
     template_setting: '模板设置',
@@ -307,6 +315,8 @@ export default {
     case_template: '测试用例模板',
     default_template: '默认模板',
     system_template: '系统模板',
+    option_check: '请添加选项值',
+    option_value_check: '请填写完整选项值',
   },
   workspace: {
     create: '创建工作空间',
@@ -383,7 +393,7 @@ export default {
       use_tip_tapd: 'Tapd Basic Auth 账号信息在"公司管理-安全与集成-开放平台"中查询',
       use_tip_jira: 'Jira software server 认证信息为 账号密码，Jira software cloud 认证信息为 账号+令牌(账户设置-安全-创建API令牌)',
       use_tip_zentao: '账号密码为具有相应权限的Zentao账号，账号需要具有 超级model调用接口权限',
-      use_tip_two: '保存 Basic Auth 账号信息后，需要在 MeterSphere 项目中手动关联 ID/key',
+      use_tip_two: '保存 Basic Auth 账号信息后，需要在 MeterSphere 项目中手动关联 ID/key 和缺陷模板',
       link_the_project_now: '马上关联项目',
       cancel_edit: '取消编辑',
       cancel_integration: '取消集成',
@@ -462,6 +472,33 @@ export default {
       add_user_role_batch: '批量添加角色',
     }
   },
+  group: {
+    add: '添加用户组',
+    group_permission: '用户组与权限',
+    create: '创建用户组',
+    type: '所属类型',
+    scope: '应用范围',
+    operator: '操作人',
+    description: '描述',
+    set_permission: '设置权限',
+    delete: '删除用户组',
+    edit: '编辑用户组',
+    admin_not_allow_edit: '系统管理员不支持编辑!',
+    admin_not_allow_delete: '系统用户组不支持删除!',
+    select_type: '请选择所属类型',
+    system: '系统',
+    organization: '组织',
+    workspace: '工作空间',
+    project: '项目',
+    global_group: '全局用户组',
+    belong_organization: '所属组织',
+    select_belong_organization: '请选择所属组织',
+    functional_menu: '功能菜单',
+    operation_object: '操作对象',
+    check_all: '全选',
+    permission: '权限',
+    please_select_group: '请选择用户组'
+  },
   role: {
     please_choose_role: '请选择角色',
     admin: '系统管理员',
@@ -486,6 +523,7 @@ export default {
     test_monitor_details: '监控详情',
     test_details: '测试详情',
     test_duration: '执行时长：{0} 分钟 {1} 秒',
+    test_execute_time: '执行时长',
     test_start_time: '开始时间',
     test_end_time: '结束时间',
     test_stop_now: '立即停止',
@@ -670,6 +708,7 @@ export default {
       api_name: "接口名称",
       api_status: "接口状态",
       api_type: "请求类型",
+      api_agreement: "协议/方法",
       api_path: "路径",
       api_principal: "负责人",
       api_last_time: "最后更新时间",
@@ -746,6 +785,7 @@ export default {
         other_config: "其他设置",
         message_template: "报文模版",
         tcp_parameter_tip: "请求参数可以在请求模版通过${xxx}引用",
+        step_message: "步骤过多，是否展开前 30 个步骤？",
         esb_table: {
           name: "参数名",
           type: "类型",
@@ -810,7 +850,7 @@ export default {
       wait_controller: "等待控制器",
       if_controller: "条件控制器",
       loop_controller: "循环控制器",
-      transcation_controller:"事务控制器",
+      transcation_controller: "事务控制器",
       scenario_import: "场景导入",
       customize_script: "自定义脚本",
       customize_req: "自定义请求",
@@ -943,6 +983,7 @@ export default {
       connect_timeout: "连接超时",
       response_timeout: "响应超时",
       follow_redirects: "跟随重定向",
+      cert_alias: "证书别名",
       do_multipart_post: "对 POST 使用 multipart/form-data",
       body_upload_limit_size: "上传文件大小不能超过 500 MB!",
       condition: "条件",
@@ -1006,7 +1047,11 @@ export default {
         code_template_get_response_code: "获取响应码",
         code_template_get_response_result: "获取响应结果",
         code_add_report_length: "报文头添加长度",
-        code_hide_report_length: "隐藏报文长度"
+        code_hide_report_length: "隐藏报文长度",
+        param_environment_get_global_variable: "获取环境参数",
+        param_environment_set_global_variable: "设置环境参数",
+        param_environment_delete_global_variable: "删除环境参数",
+        param_environment_show_global_variable: "获取所有环境参数",
       },
       dubbo: {
         protocol: "协议",
@@ -1035,6 +1080,7 @@ export default {
         variable_names: "按列存储",
       },
       tcp: {
+        general_format: "通用格式",
         server: "服务器名或IP",
         port: "端口",
         connect: "连接(ms)",
@@ -1074,7 +1120,7 @@ export default {
       swagger_url_import: "使用URL导入",
       timing_synchronization: "定时同步",
       next_synchronization_time: "下次同步时间",
-      ms_env_import_file_limit: "支持通过MeterSphere导出的json格式文件",
+      ms_env_import_file_limit: "仅支持通过MeterSphere导出的json格式文件",
       file_exceed_limit: "文件数量超出限制",
 
 
@@ -1328,6 +1374,7 @@ export default {
       batch_move_case: '批量移动',
       batch_delete_case: '批量删除',
       batch_unlink: '批量取消关联',
+      unlink: '取消关联',
       project_name: '所属项目',
       status: '评审结果',
       status_prepare: '未开始',
@@ -1361,7 +1408,8 @@ export default {
         continue_upload: "继续上传",
       },
       export: {
-        export: "导出用例"
+        export: "导出用例",
+        export_tip: "请切换成接口列表勾选用例导出！"
       }
     },
     plan: {
@@ -1535,6 +1583,8 @@ export default {
     },
     issue: {
       issue: "缺陷",
+      issue_management: "缺陷管理",
+      issue_resource: "缺陷来源",
       create_issue: "创建缺陷",
       add_issue: "添加缺陷",
       issue_list: "缺陷列表",
@@ -1667,6 +1717,7 @@ export default {
     running_task: '运行中的任务',
     next_execution_time: "下次执行时间",
     edit_timer_task: "编辑定时任务",
+    task_config: "任务配置",
     please_input_cron_expression: "请输入 Cron 表达式",
     generate_expression: "生成表达式",
     cron_expression_format_error: "Cron 表达式格式错误",
@@ -1808,5 +1859,21 @@ export default {
     idd_report: "独立报告",
     set_report: "集合报告",
     report_name: "报告名称",
+    run_with_resource_pool: "资源池运行",
+  },
+  operating_log: {
+    title: "操作日志",
+    time: "操作时间",
+    user: "操作人",
+    type: "操作类型",
+    object: "操作对象",
+    name: "标题",
+    info: "查看详情",
+    change_field: "变更字段",
+    before_change: "变更前",
+    after_change: "变更后",
+    share: "分享",
+    change_history: "变更历史",
+    change_content: "变更内容"
   }
 };

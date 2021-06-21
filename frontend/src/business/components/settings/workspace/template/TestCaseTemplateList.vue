@@ -2,7 +2,7 @@
   <el-card>
 
     <template v-slot:header>
-      <ms-table-header :is-tester-permission="true" :condition.sync="condition" @search="initTableData" @create="handleCreate"
+      <ms-table-header :condition.sync="condition" @search="initTableData" @create="handleCreate"
                        :create-tip="$t('custom_field.template_create')" :title="$t('custom_field.case_template')"/>
     </template>
 
@@ -14,6 +14,7 @@
       :page-size.sync="pageSize"
       :operators="operators"
       :screen-height="tableHeight"
+      :enable-selection="false"
       @handlePageChange="initTableData"
       @refresh="initTableData">
 

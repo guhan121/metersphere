@@ -1,6 +1,7 @@
 package io.metersphere.api.jmeter;
 
 import com.alibaba.fastjson.JSONObject;
+import io.metersphere.api.dto.RunningParamKeys;
 import io.metersphere.api.dto.automation.ApiTestReportVariable;
 import io.metersphere.api.dto.scenario.request.RequestType;
 import io.metersphere.api.service.*;
@@ -65,6 +66,10 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 
     private TestPlanApiCaseService testPlanApiCaseService;
 
+    private ApiEnvironmentRunningParamService apiEnvironmentRunningParamService;
+
+    private TestPlanTestCaseService testPlanTestCaseService;
+
     public String runMode = ApiRunMode.RUN.name();
 
     // 测试ID
@@ -76,6 +81,19 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 
 
     static int numbersOfTest = 0;
+
+    //获得控制台内容
+    private PrintStream oldPrintStream = System.out;
+    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+    private void setConsole() {
+        System.setOut(new PrintStream(bos)); //设置新的out
+    }
+
+    private String getConsole() {
+        System.setOut(oldPrintStream);
+        return bos.toString();
+    }
 
     /**
      * Increment number of active threads.
@@ -143,6 +161,14 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         if (testPlanApiCaseService == null) {
             LogUtil.error("testPlanApiCaseService is required");
         }
+        apiEnvironmentRunningParamService = CommonBeanFactory.getBean(ApiEnvironmentRunningParamService.class);
+        if(apiEnvironmentRunningParamService == null){
+            LogUtil.error("apiEnvironmentRunningParamService is required");
+        }
+        testPlanTestCaseService = CommonBeanFactory.getBean(TestPlanTestCaseService.class);
+        if(testPlanTestCaseService == null){
+            LogUtil.error("testPlanTestCaseService is required");
+        }
         super.setupTest(context);
     }
 
@@ -179,11 +205,16 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         testResult.setTestId(testId);
         testResult.setTotal(queue.size());
         testResult.setSetReportId(this.setReportId);
-        std.println("===queue size=====" + queue.size());
+        testResult.setConsole(getConsole());
+        testResult.setTotal(0);
         // 一个脚本里可能包含多个场景(ThreadGroup)，所以要区分开，key: 场景Id
         final Map<String, ScenarioResult> scenarios = new LinkedHashMap<>();
         queue.forEach(result -> {
             // 线程名称: <场景名> <场景Index>-<请求Index>, 例如：Scenario 2-1
+            if(StringUtils.equals(result.getSampleLabel(), RunningParamKeys.RUNNING_DEBUG_SAMPLER_NAME)){
+                String evnStr = result.getResponseDataAsString();
+                apiEnvironmentRunningParamService.parseEvn(evnStr);
+            }else {
             String scenarioName = StringUtils.substringBeforeLast(result.getThreadName(), THREAD_SPLIT);
             String index = StringUtils.substringAfterLast(result.getThreadName(), THREAD_SPLIT);
             String scenarioId = StringUtils.substringBefore(index, ID_SPLIT);
@@ -216,10 +247,12 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
 
             testResult.addPassAssertions(requestResult.getPassAssertions());
             testResult.addTotalAssertions(requestResult.getTotalAssertions());
-
+                testResult.setTotal(testResult.getTotal()+1);
             scenarioResult.addPassAssertions(requestResult.getPassAssertions());
             scenarioResult.addTotalAssertions(requestResult.getTotalAssertions());
+            }
         });
+
         testResult.getScenarios().addAll(scenarios.values());
         testResult.getScenarios().sort(Comparator.comparing(ScenarioResult::getId));
         ApiTestReport report = null;
@@ -315,9 +348,7 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         } else if (StringUtils.equalsAny(this.runMode, ApiRunMode.SCENARIO.name(), ApiRunMode.SCENARIO_PLAN.name(),
                 ApiRunMode.SCHEDULE_SCENARIO_PLAN.name(), ApiRunMode.SCHEDULE_SCENARIO.name())) {
             // 执行报告不需要存储，由用户确认后在存储
-//            testResult.setTestId(testId);
-            // 设置所有的是完成状态
-            // 返回的是最后一个报告
+            testResult.setTestId(testId);
             ApiScenarioReport scenarioReport = apiScenarioReportService.complete(testResult, this.runMode);
             if (scenarioReport == null) {
                 LogUtil.error("scenarioReport = null,this.runMode=" + this.runMode);
@@ -332,8 +363,6 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
                 String environmentId = environment.get(apiScenario.getProjectId()).toString();
                 name = apiAutomationService.get(environmentId).getName();
             }
-
-
             //时间
             Long time = scenarioReport.getUpdateTime();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -366,7 +395,6 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
         queue.clear();
         super.teardownTest(context);
 
-        TestPlanTestCaseService testPlanTestCaseService = CommonBeanFactory.getBean(TestPlanTestCaseService.class);
         List<String> ids = testPlanTestCaseService.getTestPlanTestCaseIds(testResult.getTestId());
         if (ids.size() > 0) {
             try {
@@ -500,8 +528,6 @@ public class APIBackendListenerClient extends AbstractBackendListenerClient impl
                 responseResult.getAssertions().add(responseAssertionResult);
             }
         }
-//        responseResult.setConsole(getConsole());
-
         return requestResult;
     }
 

@@ -4,6 +4,7 @@
     <slot name="header"></slot>
 
     <ms-node-tree
+      :is-display="getIsRelevance"
       v-loading="result.loading"
       :tree-nodes="data"
       :type="isReadOnly ? 'view' : 'edit'"
@@ -13,6 +14,9 @@
       @drag="drag"
       @remove="remove"
       @refresh="list"
+      :delete-permission="['PROJECT_API_DEFINITION:READ+DELETE_API']"
+      :add-permission="['PROJECT_API_DEFINITION:READ+CREATE_API']"
+      :update-permission="['PROJECT_API_DEFINITION:READ+EDIT_API']"
       @nodeSelectEvent="nodeChange"
       ref="nodeTree">
 
@@ -44,6 +48,7 @@
   import MsNodeTree from "../../../../track/common/NodeTree";
   import ApiModuleHeader from "./ApiModuleHeader";
   import {buildNodePath, buildTree} from "../../model/NodeTree";
+  import {getCurrentProjectID} from "@/common/js/utils";
 
   export default {
     name: 'MsApiModule',
@@ -56,6 +61,7 @@
     },
     data() {
       return {
+        openType: 'relevance',
         result: {},
         condition: {
           protocol: OPTIONS[0].value,
@@ -76,7 +82,8 @@
       showOperator: Boolean,
       planId: String,
       relevanceProjectId: String,
-      reviewId: String
+      reviewId: String,
+      pageSource:String,
     },
     computed: {
       isPlanModel() {
@@ -89,8 +96,15 @@
         return this.reviewId ? true : false;
       },
       projectId() {
-        return this.$store.state.projectId
+        return getCurrentProjectID();
       },
+      getIsRelevance(){
+        if(this.pageSource !== 'definition'){
+          return this.openType;
+        }else {
+          return "definition";
+        }
+      }
     },
     mounted() {
       this.initProtocol();

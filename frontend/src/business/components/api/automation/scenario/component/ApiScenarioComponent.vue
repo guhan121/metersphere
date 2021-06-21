@@ -71,7 +71,7 @@
             this.scenario.projectId = response.data.projectId;
             const pro = this.projectList.find(p => p.id === response.data.projectId);
             if (!pro) {
-              this.scenario.projectId = this.$store.state.projectId;
+              this.scenario.projectId = getCurrentProjectID();
             }
             if (this.scenario.hashTree) {
               this.setDisabled(this.scenario.hashTree, this.scenario.projectId);
@@ -98,10 +98,13 @@
     computed: {
       isDeletedOrRef() {
         if (this.scenario.referenced != undefined && this.scenario.referenced === 'Deleted' || this.scenario.referenced === 'REF') {
-          return true
+          return true;
         }
         return false;
-      }
+      },
+      projectId() {
+        return getCurrentProjectID();
+      },
     },
     methods: {
       remove() {
@@ -145,18 +148,21 @@
       },
       calcProjectId(projectId, parentId) {
         if (!projectId) {
-          return parentId ? parentId : this.$store.state.projectId;
+          return parentId ? parentId : getCurrentProjectID();
         } else {
           const project = this.projectList.find(p => p.id === projectId);
           if (project) {
             return projectId;
           }
-          return parentId ? parentId : this.$store.state.projectId;
+          return parentId ? parentId : getCurrentProjectID();
         }
       },
       getProjectName(id) {
-        const project = this.projectList.find(p => p.id === id);
-        return project ? project.name : "";
+        if (this.projectId !== id) {
+          const project = this.projectList.find(p => p.id === id);
+          return project ? project.name : "";
+        }
+
       }
     }
   }

@@ -1,5 +1,7 @@
 export default {
   commons: {
+    failure_continues: "Failure continues",
+    full_screen_editing: "Full screen editing",
     yes: "yes",
     no: "no",
     default: "default",
@@ -63,6 +65,7 @@ export default {
     email: 'Email',
     phone: 'Phone',
     role: 'Role',
+    group: 'Group',
     personal_info: 'Personal Info',
     status: 'Status',
     show_all: 'Show All',
@@ -90,7 +93,7 @@ export default {
     please_select: 'Please select',
     search_by_name: 'Search by name',
     search_by_name_or_id: 'Search by ID/NAME',
-    search_by_id_name_tag: 'Search by ID/NAME/TAG',
+    search_by_id_name_tag: 'Search by ID/NAME/TAG/PATH',
     personal_information: 'Personal Information',
     exit_system: 'Exit System',
     verification: 'Verification',
@@ -156,6 +159,7 @@ export default {
     more_operator: "More operator",
     mock: "Mock settings",
     all_module_title: "All module",
+    create_user: 'Creator',
     table: {
       select_tip: "Item {0} data is selected"
     },
@@ -278,6 +282,7 @@ export default {
     }
   },
   custom_field: {
+    add_option: 'Add Option',
     case_status: 'Case Status',
     case_maintainer: 'Maintainer',
     case_priority: 'Case Priority',
@@ -291,9 +296,12 @@ export default {
     scene: 'Use Scene',
     attribute_type: 'Attribute Type',
     field_name: 'Field Name',
+    field: 'Field',
     field_remark: 'Field Remark',
     field_type: 'Field Type',
     field_option: 'Options',
+    field_text: 'Field Text',
+    field_value: 'Field Value',
     add_field: 'Add Field',
     api_field_name: 'API Field Name',
     template_setting: 'Template Setting',
@@ -306,6 +314,8 @@ export default {
     case_template: 'Test Case Template',
     default_template: 'Default Template',
     system_template: 'System Template',
+    option_check: 'Please add option values',
+    option_value_check: 'Please fill in the full option values',
   },
   workspace: {
     create: 'Create Workspace',
@@ -385,7 +395,7 @@ export default {
       use_tip_tapd: 'Basic Auth account information is queried in "Company Management-Security and Integration-Open Platform"',
       use_tip_jira: 'Jira software server authentication information is account password, Jira software cloud authentication information is account + token (account settings-security-create API token)',
       use_tip_zentao: 'The account password is a Zentao account with corresponding permissions, and the account needs to have super model calling interface permissions',
-      use_tip_two: 'After saving the Basic Auth account information, you need to manually associate the ID/key in the MeterSphere project',
+      use_tip_two: 'After saving the Basic Auth account information, you need to manually associate the ID/key and issue template in the MeterSphere project',
       link_the_project_now: 'Link the project now',
       cancel_edit: 'Cancel edit',
       cancel_integration: 'Cancel integration',
@@ -464,6 +474,33 @@ export default {
       add_user_role_batch: 'Batch add user role',
     }
   },
+  group: {
+    add: 'Add User Group',
+    group_permission: 'Group Permission',
+    create: 'Create',
+    type: 'Type',
+    scope: 'Scope',
+    operator: 'Operator',
+    description: 'Description',
+    set_permission: 'Set Permission',
+    delete: 'Delete',
+    edit: 'Edit',
+    admin_not_allow_edit: 'admin not allow edit!',
+    admin_not_allow_delete: 'admin not allow delete!',
+    select_type: 'please select type',
+    system: 'System',
+    organization: 'Organization',
+    workspace: 'Workspace',
+    project: 'Project',
+    global_group: 'Global Group',
+    belong_organization: 'Belong Organization',
+    select_belong_organization: 'please select belong organization',
+    functional_menu: 'Functional Menu',
+    operation_object: 'Operation Object',
+    check_all: 'ALL',
+    permission: 'Permission',
+    please_select_group: 'Please Select Group'
+  },
   role: {
     please_choose_role: 'Please Choose Role',
     admin: 'Admin',
@@ -488,6 +525,7 @@ export default {
     test_monitor_details: 'Test Monitor Details',
     test_details: 'Test Details',
     test_duration: 'Execution Time：{0} minutes {1} seconds',
+    test_execute_time: 'Execution Time',
     test_start_time: 'Start Time',
     test_end_time: 'End Time',
     test_stop_now: 'Test Stop Now',
@@ -670,6 +708,7 @@ export default {
       api_name: "Api name",
       api_status: "Api status",
       api_type: "Api type",
+      api_agreement: "Method",
       api_path: "Api path",
       api_principal: "Api principal",
       api_last_time: "Last update time",
@@ -695,6 +734,7 @@ export default {
         select_case: "Search use cases",
         select_api: "Search api",
         case: "Case",
+        responsible: "Responsible",
         title: "Create api",
         path_info: "Please enter the URL of the interface, such as /api/demo/#{id}, where id is the path parameter",
         path_all_info: "Please enter the complete test address",
@@ -743,8 +783,10 @@ export default {
         batch_move: "Batch move",
         path_valid_info: "The request path is invalid",
         other_config: "Other Config",
+        cert_alias: "Certificate Alias",
         message_template: "Message Template",
         tcp_parameter_tip: "The request parameters can be referenced in the request template ${XXX}",
+        step_message: "Too many steps, whether to expand the first 30 steps？",
         esb_table: {
           name: "name",
           type: "type",
@@ -1004,7 +1046,11 @@ export default {
         code_template_get_response_code: "Get Response Code",
         code_template_get_response_result: "Get Response Result",
         code_add_report_length: "Add report length to head",
-        code_hide_report_length: "Hide report length"
+        code_hide_report_length: "Hide report length",
+        param_environment_get_global_variable: "Get run environment param",
+        param_environment_set_global_variable: "Set run environment param",
+        param_environment_delete_global_variable: "Delete run environment param",
+        param_environment_show_global_variable: "Show all environment params",
       },
       dubbo: {
         protocol: "protocol",
@@ -1032,6 +1078,7 @@ export default {
         variable_names: "Variable names",
       },
       tcp: {
+        general_format: "General",
         server: "Server Name or IP",
         port: "Port Number",
         connect: "Connect(ms)",
@@ -1071,7 +1118,7 @@ export default {
       swagger_url_import: "Import using URL",
       timing_synchronization: "Timing synchronization",
       next_synchronization_time: "Next synchronization time",
-      ms_env_import_file_limit: "It supports JSON format files exported through metersphere",
+      ms_env_import_file_limit: "It only supports JSON format files exported through metersphere",
       file_exceed_limit: "The number of files exceeds the limit",
     },
     home_page: {
@@ -1323,6 +1370,7 @@ export default {
       batch_move_case: 'Batch move',
       batch_delete_case: 'Batch delete',
       batch_unlink: 'Batch Unlink',
+      unlink: 'Unlink',
       project_name: "Project",
       status: 'Review Status',
       status_prepare: 'Not reviewed',
@@ -1356,7 +1404,8 @@ export default {
         continue_upload: "Upload continue",
       },
       export: {
-        export: "Export cases"
+        export: "Export cases",
+        export_tip: "Switch to Interface List and check Use Case Export"
       }
     },
     plan: {
@@ -1529,6 +1578,8 @@ export default {
     },
     issue: {
       issue: "Issue",
+      issue_management: "Issue Management",
+      issue_resource: "Issue source",
       create_issue: "Create Issue",
       add_issue: "Add Issue",
       issue_list: "Issue List",
@@ -1655,6 +1706,7 @@ export default {
     not_set: "Not Set",
     next_execution_time: "Next Execution Time",
     edit_timer_task: "Edit Timer Task",
+    task_config: "Task Config",
     test_name: 'Test Name',
     running_rule: 'Rule',
     job_status: 'Status',
@@ -1800,5 +1852,21 @@ export default {
     idd_report: "Report",
     set_report: "Set report",
     report_name: "Report name",
+    run_with_resource_pool: "Run Within Resource pool",
+  },
+  operating_log: {
+    title: "Operating log",
+    time: "Operating time",
+    user: "Operating user",
+    type: "Operating type",
+    object: "Operating object",
+    name: "Operating title",
+    info: "Detail",
+    change_field: "Change field",
+    before_change: "Before change",
+    after_change: "After change",
+    share: "Share",
+    change_history: "Change history",
+    change_content: "Change content"
   }
 };

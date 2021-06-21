@@ -25,13 +25,11 @@ import io.metersphere.api.dto.definition.request.variable.ScenarioVariable;
 import io.metersphere.api.dto.mockconfig.MockConfigStaticData;
 import io.metersphere.api.dto.scenario.KeyValue;
 import io.metersphere.api.dto.scenario.environment.EnvironmentConfig;
-import io.metersphere.api.jmeter.APIBackendListenerClient;
 import io.metersphere.api.service.ApiTestEnvironmentService;
 import io.metersphere.base.domain.ApiTestEnvironmentWithBLOBs;
 import io.metersphere.commons.constants.DelimiterConstants;
 import io.metersphere.commons.constants.LoopConstants;
 import io.metersphere.commons.constants.MsTestElementConstants;
-import io.metersphere.commons.constants.RunModeConstants;
 import io.metersphere.commons.exception.MSException;
 import io.metersphere.commons.utils.CommonBeanFactory;
 import io.metersphere.commons.utils.FileUtils;
@@ -45,17 +43,13 @@ import org.apache.jmeter.config.RandomVariableConfig;
 import org.apache.jmeter.modifiers.CounterConfig;
 import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.testelement.TestElement;
-import org.apache.jmeter.visualizers.backend.BackendListener;
 import org.apache.jorphan.collections.HashTree;
 import org.apache.jorphan.collections.ListedHashTree;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
@@ -83,7 +77,7 @@ import java.util.stream.Collectors;
 })
 @JSONType(seeAlso = {MsHTTPSamplerProxy.class, MsHeaderManager.class, MsJSR223Processor.class, MsJSR223PostProcessor.class,
         MsJSR223PreProcessor.class, MsTestPlan.class, MsThreadGroup.class, MsAuthManager.class, MsAssertions.class,
-        MsExtract.class, MsTCPSampler.class, MsDubboSampler.class, MsJDBCSampler.class, MsConstantTimer.class, MsIfController.class,MsTransactionController.class, MsScenario.class, MsLoopController.class, MsJmeterElement.class}, typeKey = "type")
+        MsExtract.class, MsTCPSampler.class, MsDubboSampler.class, MsJDBCSampler.class, MsConstantTimer.class, MsIfController.class, MsTransactionController.class, MsScenario.class, MsLoopController.class, MsJmeterElement.class}, typeKey = "type")
 @Data
 public abstract class MsTestElement {
     private String type;
@@ -113,7 +107,8 @@ public abstract class MsTestElement {
     private String projectId;
     @JSONField(ordinal = 13)
     private boolean isMockEnvironment;
-
+    @JSONField(ordinal = 14)
+    private String useEnviroment;
     private MsTestElement parent;
 
     private static final String BODY_FILE_DIR = FileUtils.BODY_FILE_DIR;
@@ -262,7 +257,20 @@ public abstract class MsTestElement {
         if (element.getParent() == null) {
             return path;
         }
-        path = StringUtils.isEmpty(element.getName()) ? element.getType() : element.getName() + DelimiterConstants.STEP_DELIMITER.toString() + path;
+        if (MsTestElementConstants.LoopController.name().equals(element.getType())) {
+            MsLoopController loopController = (MsLoopController) element;
+            if (StringUtils.equals(loopController.getLoopType(), LoopConstants.WHILE.name()) && loopController.getWhileController() != null) {
+                path = "While 循环" + DelimiterConstants.STEP_DELIMITER.toString() + "While 循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
+            }
+            if (StringUtils.equals(loopController.getLoopType(), LoopConstants.FOREACH.name()) && loopController.getForEachController() != null) {
+                path = "ForEach 循环" + DelimiterConstants.STEP_DELIMITER.toString() + " ForEach 循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
+            }
+            if (StringUtils.equals(loopController.getLoopType(), LoopConstants.LOOP_COUNT.name()) && loopController.getCountController() != null) {
+                path = "次数循环" + DelimiterConstants.STEP_DELIMITER.toString() + "次数循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
+            }
+        } else {
+            path = StringUtils.isEmpty(element.getName()) ? element.getType() : element.getName() + DelimiterConstants.STEP_DELIMITER.toString() + path;
+        }
         return getFullPath(element.getParent(), path);
     }
 
@@ -278,24 +286,13 @@ public abstract class MsTestElement {
 
     protected String getParentName(MsTestElement parent) {
         if (parent != null) {
-            if (MsTestElementConstants.LoopController.name().equals(parent.getType())) {
-                MsLoopController loopController = (MsLoopController) parent;
-                if (StringUtils.equals(loopController.getLoopType(), LoopConstants.WHILE.name()) && loopController.getWhileController() != null) {
-                    return "While 循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
-                }
-                if (StringUtils.equals(loopController.getLoopType(), LoopConstants.FOREACH.name()) && loopController.getForEachController() != null) {
-                    return "ForEach 循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
-                }
-                if (StringUtils.equals(loopController.getLoopType(), LoopConstants.LOOP_COUNT.name()) && loopController.getCountController() != null) {
-                    return "次数循环-" + "${MS_LOOP_CONTROLLER_CONFIG}";
-                }
-            }else if(MsTestElementConstants.TransactionController.name().equals(parent.getType())){
-                MsTransactionController transactionController = (MsTransactionController)parent;
-                if(StringUtils.isNotEmpty(transactionController.getName())){
+            if (MsTestElementConstants.TransactionController.name().equals(parent.getType())) {
+                MsTransactionController transactionController = (MsTransactionController) parent;
+                if (StringUtils.isNotEmpty(transactionController.getName())) {
                     return transactionController.getName();
-                }else if(StringUtils.isNotEmpty(transactionController.getLabelName())){
+                } else if (StringUtils.isNotEmpty(transactionController.getLabelName())) {
                     return transactionController.getLabelName();
-                }else {
+                } else {
                     return "TransactionController";
                 }
             }
@@ -320,6 +317,25 @@ public abstract class MsTestElement {
             }
             return false;
         }
+    }
+
+    public static <T> List<T> findFromHashTreeByType(MsTestElement hashTree, Class<T> clazz, List<T> requests) {
+        if (requests == null) {
+            requests = new ArrayList<>();
+        }
+        if (clazz.isInstance(hashTree)) {
+            requests.add((T) hashTree);
+        } else {
+            if (hashTree != null) {
+                LinkedList<MsTestElement> childHashTree = hashTree.getHashTree();
+                if (CollectionUtils.isNotEmpty(childHashTree)) {
+                    for (MsTestElement item : childHashTree) {
+                        findFromHashTreeByType(item, clazz, requests);
+                    }
+                }
+            }
+        }
+        return requests;
     }
 }
 

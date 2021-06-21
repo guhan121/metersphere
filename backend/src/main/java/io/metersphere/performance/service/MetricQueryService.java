@@ -6,12 +6,10 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.client.utils.StringUtils;
 import io.metersphere.base.domain.LoadTestReportWithBLOBs;
-import io.metersphere.base.domain.LoadTestWithBLOBs;
 import io.metersphere.base.domain.TestResource;
-import io.metersphere.base.mapper.LoadTestMapper;
 import io.metersphere.base.mapper.LoadTestReportMapper;
 import io.metersphere.base.mapper.ext.ExtLoadTestReportMapper;
-import io.metersphere.commons.constants.SystemParam;
+import io.metersphere.commons.constants.ParamConstants;
 import io.metersphere.commons.exception.MSException;
 import io.metersphere.commons.utils.DateUtils;
 import io.metersphere.commons.utils.LogUtil;
@@ -32,7 +30,6 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Resource;
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -56,7 +53,7 @@ public class MetricQueryService {
 
 
     public List<MetricData> queryMetricData(MetricRequest metricRequest) {
-        String host = systemParameterService.getValue(SystemParam.PROMETHEUS_HOST);
+        String host = systemParameterService.getValue(ParamConstants.BASE.PROMETHEUS_HOST.getValue());
         prometheusHost = StringUtils.isNotBlank(host) ? host : "http://ms-prometheus:9090";
         List<MetricData> metricDataList = new ArrayList<>();
         long endTime = metricRequest.getEndTime();
@@ -197,14 +194,10 @@ public class MetricQueryService {
         MetricRequest metricRequest = new MetricRequest();
         metricRequest.setMetricDataQueries(list);
         try {
-            SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-            Date startTime = df.parse(reportTimeInfo.getStartTime());
-            Date endTime = df.parse(reportTimeInfo.getEndTime());
-            metricRequest.setStartTime(startTime.getTime());
-            metricRequest.setEndTime(endTime.getTime());
+            metricRequest.setStartTime(reportTimeInfo.getStartTime());
+            metricRequest.setEndTime(reportTimeInfo.getEndTime());
         } catch (Exception e) {
             LogUtil.error(e.getMessage(), e);
-            e.printStackTrace();
         }
 
         return queryMetricData(metricRequest);
@@ -276,7 +269,7 @@ public class MetricQueryService {
                 granularity = data.getGranularity();
             }
         } catch (Exception e) {
-            LogUtil.error(e.getMessage() ,e);
+            LogUtil.error(e.getMessage(), e);
         }
         return granularity;
     }

@@ -26,8 +26,7 @@
 </template>
 
 <script>
-import {getCurrentProjectID, getCurrentUser, hasRoles} from "@/common/js/utils";
-import {PROJECT_ID, ROLE_TEST_MANAGER, ROLE_TEST_USER, ROLE_TEST_VIEWER} from "@/common/js/constants";
+import {getCurrentProjectID, getCurrentUser, getCurrentUserId, saveLocalStorage} from "@/common/js/utils";
 import {mapGetters} from "vuex";
 
 export default {
@@ -39,14 +38,14 @@ export default {
   created() {
     this.init();
   },
+  inject: [
+    'reload'
+  ],
   computed: {
     ...mapGetters([
       'isNewVersion',
       'isOldVersion',
     ]),
-    currentProjectId() {
-      return localStorage.getItem(PROJECT_ID)
-    }
   },
   data() {
     return {
@@ -55,6 +54,7 @@ export default {
       searchArray: [],
       searchString: '',
       userId: getCurrentUser().id,
+      currentProjectId: getCurrentProjectID(),
     }
   },
   watch: {
@@ -64,38 +64,22 @@ export default {
   },
   methods: {
     init: function () {
-      if (hasRoles(ROLE_TEST_VIEWER, ROLE_TEST_USER, ROLE_TEST_MANAGER)) {
-        this.result = this.$get("/project/listAll", response => {
-          this.items = response.data;
-          this.searchArray = response.data;
-          let userLastProjectId = getCurrentUser().lastProjectId;
-          if (userLastProjectId) {
-            // id 是否存在
-            if (this.searchArray.length > 0 && this.searchArray.map(p => p.id).indexOf(userLastProjectId) !== -1) {
-              let projectId = localStorage.getItem(PROJECT_ID);
-              if (!projectId || projectId != userLastProjectId) {
-                localStorage.setItem(PROJECT_ID, userLastProjectId);
-                this.$store.commit('setProjectId', userLastProjectId);
-                window.location.reload();
-              } else {
-                this.$store.commit('setProjectId', projectId);
-              }
-            }
+      this.result = this.$post("/project/list/related", {userId: getCurrentUserId()}, response => {
+        this.items = response.data;
+        this.searchArray = response.data;
+        let projectId = getCurrentProjectID();
+        if (projectId) {
+          // 保存的 projectId 在当前项目列表是否存在; 切换工作空间后
+          if (this.searchArray.length > 0 && this.searchArray.map(p => p.id).indexOf(projectId) === -1) {
+            this.change(this.items[0].id);
           }
-          let projectId = getCurrentProjectID();
-          if (projectId) {
-            // 保存的 projectId 在当前项目列表是否存在; 切换工作空间后
-            if (this.searchArray.length > 0 && this.searchArray.map(p => p.id).indexOf(projectId) === -1) {
-              this.change(this.items[0].id);
-            }
-          } else {
-            if (this.items.length > 0) {
-              this.change(this.items[0].id);
-            }
+        } else {
+          if (this.items.length > 0) {
+            this.change(this.items[0].id);
           }
-          this.changeProjectName(projectId);
-        })
-      }
+        }
+        this.changeProjectName(projectId);
+      })
     },
     query(queryString) {
       this.items = queryString ? this.searchArray.filter(this.createFilter(queryString)) : this.searchArray;
@@ -110,22 +94,14 @@ export default {
       if (projectId === currentProjectId) {
         return;
       }
-      this.$post("/user/update/current", {id: this.userId, lastProjectId: projectId}, () => {
-        localStorage.setItem(PROJECT_ID, projectId);
-        this.$store.commit('setProjectId', projectId);
-        let path = this.$route.matched[0].path ? this.$route.matched[0].path : '/';
-        if (path === '/api') {
-          if (this.isNewVersion) {
-            path = "/api/home";
-          } else if (this.isOldVersion) {
-            path = "/api/home_obsolete";
-          } else {
-            path = '/';
-          }
-        }
-        this.$router.push(path).then(() => {
-          window.location.reload()
-        }).catch(err => err);
+      this.$post("/user/update/current", {id: this.userId, lastProjectId: projectId}, (response) => {
+        saveLocalStorage(response);
+        this.currentProjectId = projectId;
+
+        this.$EventBus.$emit('projectChange');
+        // 刷新路由
+        this.reload();
+
         this.changeProjectName(projectId);
       });
     },

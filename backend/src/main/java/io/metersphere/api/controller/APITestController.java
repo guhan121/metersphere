@@ -41,7 +41,6 @@ import static io.metersphere.commons.utils.JsonPathUtils.getListJson;
 
 @RestController
 @RequestMapping(value = "/api")
-@RequiresRoles(value = {RoleConstants.TEST_MANAGER, RoleConstants.TEST_USER, RoleConstants.TEST_VIEWER}, logical = Logical.OR)
 public class APITestController {
     @Resource
     private APITestService apiTestService;
@@ -110,17 +109,17 @@ public class APITestController {
     }
 
     @PostMapping(value = "/create", consumes = {"multipart/form-data"})
-    public void create(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file") MultipartFile file, @RequestPart(value = "files") List<MultipartFile> bodyFiles) {
+    public void create(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file", required = false) MultipartFile file, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) {
         apiTestService.create(request, file, bodyFiles);
     }
 
     @PostMapping(value = "/create/merge", consumes = {"multipart/form-data"})
-    public void mergeCreate(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file") MultipartFile file, @RequestPart(value = "selectIds") List<String> selectIds) {
+    public void mergeCreate(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file", required = false) MultipartFile file, @RequestPart(value = "selectIds") List<String> selectIds) {
         apiTestService.mergeCreate(request, file, selectIds);
     }
 
     @PostMapping(value = "/update", consumes = {"multipart/form-data"})
-    public void update(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file") MultipartFile file, @RequestPart(value = "files") List<MultipartFile> bodyFiles) {
+    public void update(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file", required = false) MultipartFile file, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) {
         checkownerService.checkApiTestOwner(request.getId());
         apiTestService.update(request, file, bodyFiles);
     }
@@ -149,7 +148,7 @@ public class APITestController {
     }
 
     @PostMapping(value = "/run/debug", consumes = {"multipart/form-data"})
-    public String runDebug(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file") MultipartFile file, @RequestPart(value = "files") List<MultipartFile> bodyFiles) {
+    public String runDebug(@RequestPart("request") SaveAPITestRequest request, @RequestPart(value = "file", required = false) MultipartFile file, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) {
         return apiTestService.runDebug(request, file, bodyFiles);
     }
 
@@ -159,7 +158,6 @@ public class APITestController {
     }
 
     @PostMapping(value = "/import", consumes = {"multipart/form-data"})
-    @RequiresRoles(value = {RoleConstants.TEST_USER, RoleConstants.TEST_MANAGER}, logical = Logical.OR)
     public ApiTest testCaseImport(@RequestPart(value = "file", required = false) MultipartFile file, @RequestPart("request") ApiTestImportRequest request) {
         return apiTestService.apiTestImport(file, request);
     }
@@ -394,7 +392,7 @@ public class APITestController {
     }
 
     @PostMapping(value = "/genPerformanceTestXml", consumes = {"multipart/form-data"})
-    public JmxInfoDTO genPerformanceTest(@RequestPart("request") RunDefinitionRequest runRequest, @RequestPart(value = "files") List<MultipartFile> bodyFiles) throws Exception {
+    public JmxInfoDTO genPerformanceTest(@RequestPart("request") RunDefinitionRequest runRequest, @RequestPart(value = "files", required = false) List<MultipartFile> bodyFiles) throws Exception {
 
         ParameterConfig config = new ParameterConfig();
         config.setProjectId(runRequest.getProjectId());

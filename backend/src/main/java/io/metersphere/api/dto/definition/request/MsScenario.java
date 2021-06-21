@@ -61,6 +61,9 @@ public class MsScenario extends MsTestElement {
     @JSONField(ordinal = 27)
     private Map<String, String> environmentMap;
 
+    @JSONField(ordinal = 24)
+    private boolean onSampleError;
+
     private static final String BODY_FILE_DIR = FileUtils.BODY_FILE_DIR;
 
     public MsScenario() {
@@ -132,6 +135,7 @@ public class MsScenario extends MsTestElement {
                     ApiTestEnvironmentWithBLOBs environment = environmentService.get(this.environmentMap.get(projectId));
                     if (environment != null && environment.getConfig() != null) {
                         EnvironmentConfig env = JSONObject.parseObject(environment.getConfig(), EnvironmentConfig.class);
+                        env.setApiEnvironmentid(environment.getId());
                         envConfig.put(projectId, env);
                         if (StringUtils.equals(environment.getName(), MockConfigStaticData.MOCK_EVN_NAME)) {
                             this.setMockEnvironment(true);

@@ -70,6 +70,10 @@ public class MsScenarioParser extends MsAbstractParser<ScenarioImport> {
                     if (scenarioDefinition != null) {
                         JSONArray hashTree = scenarioDefinition.getJSONArray("hashTree");
                         setCopy(hashTree);
+                        JSONObject environmentMap = scenarioDefinition.getJSONObject("environmentMap");
+                        if (environmentMap != null) {
+                            scenarioDefinition.put("environmentMap", new HashMap<>());
+                        }
                         item.setScenarioDefinition(JSONObject.toJSONString(scenarioDefinition));
                     }
                 }
@@ -89,7 +93,15 @@ public class MsScenarioParser extends MsAbstractParser<ScenarioImport> {
         if (CollectionUtils.isNotEmpty(hashTree)) {
             for (int i = 0; i < hashTree.size(); i++) {
                 JSONObject object = (JSONObject) hashTree.get(i);
-                object.put("referenced", "Copy");
+                String referenced = object.getString("referenced");
+                if (StringUtils.isNotBlank(referenced) && StringUtils.equals(referenced, "REF")) {
+                    object.put("referenced", "Copy");
+                }
+                object.put("projectId", "");
+                JSONObject environmentMap = object.getJSONObject("environmentMap");
+                if (environmentMap != null) {
+                    object.put("environmentMap", new HashMap<>());
+                }
                 if (CollectionUtils.isNotEmpty(object.getJSONArray("hashTree"))) {
                     setCopy(object.getJSONArray("hashTree"));
                 }

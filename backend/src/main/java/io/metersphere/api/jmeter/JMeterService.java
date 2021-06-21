@@ -1,17 +1,23 @@
 package io.metersphere.api.jmeter;
 
+import com.alibaba.fastjson.JSON;
+import io.metersphere.api.dto.RunRequest;
 import io.metersphere.api.dto.automation.RunModeConfig;
+import io.metersphere.api.dto.definition.request.MsTestPlan;
 import io.metersphere.api.dto.scenario.request.BodyFile;
+import io.metersphere.api.service.ApiScenarioReportService;
 import io.metersphere.base.domain.JarConfig;
+import io.metersphere.base.domain.TestResource;
 import io.metersphere.commons.constants.ApiRunMode;
 import io.metersphere.commons.constants.RunModeConstants;
 import io.metersphere.commons.exception.MSException;
-import io.metersphere.commons.utils.CommonBeanFactory;
-import io.metersphere.commons.utils.CompressUtils;
-import io.metersphere.commons.utils.LogUtil;
+import io.metersphere.commons.utils.*;
 import io.metersphere.config.JmeterProperties;
+import io.metersphere.dto.BaseSystemConfigDTO;
+import io.metersphere.dto.NodeDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.service.JarConfigService;
+import io.metersphere.service.SystemParameterService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jmeter.config.Arguments;
@@ -26,17 +32,20 @@ import org.apache.jorphan.collections.HashTree;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class JMeterService {
@@ -59,6 +68,7 @@ public class JMeterService {
     }
 
     public void run(String testId, String debugReportId, InputStream is) {
+        init();
         try {
             Object scriptWrapper = SaveService.loadElement(is);
             HashTree testPlan = getHashTree(scriptWrapper);
@@ -296,4 +306,75 @@ public class JMeterService {
         return multipartFiles;
     }
 
+    public void runTest(String testId, HashTree hashTree, String runMode, boolean isDebug, RunModeConfig config) {
+        // 获取JMX使用到的附件
+        List<Object> multipartFiles = getMultipartFiles(hashTree);
+        // 获取JAR
+        List<Object> jarFiles = getJar();
+
+        // 获取可以执行的资源池
+        String resourcePoolId = config.getResourcePoolId();
+        TestResource testResource = resourcePoolCalculation.getPool(resourcePoolId);
+
+        String configuration = testResource.getConfiguration();
+        NodeDTO node = JSON.parseObject(configuration, NodeDTO.class);
+        String nodeIp = node.getIp();
+        Integer port = node.getPort();
+
+        BaseSystemConfigDTO baseInfo = CommonBeanFactory.getBean(SystemParameterService.class).getBaseInfo();
+        // 占位符
+        String metersphereUrl = "http://localhost:8081";
+        if (baseInfo != null) {
+            metersphereUrl = baseInfo.getUrl();
+        }
+        // 检查≈地址是否正确
+        String jmeterPingUrl = metersphereUrl + "/jmeter/ping";
+        // docker 不能从 localhost 中下载文件
+        if (StringUtils.contains(metersphereUrl, "http://localhost")
+                || !UrlTestUtils.testUrlWithTimeOut(jmeterPingUrl, 1000)) {
+            MSException.throwException(Translator.get("run_load_test_file_init_error"));
+        }
+
+        String uri = String.format(BASE_URL + "/jmeter/api/run", nodeIp, port);
+        try {
+            File file = new File(FileUtils.BODY_FILE_DIR + "/tmp");
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+
+            RunRequest runRequest = new RunRequest();
+            runRequest.setTestId(testId);
+            runRequest.setDebug(isDebug);
+            runRequest.setRunMode(runMode);
+            runRequest.setConfig(config);
+            runRequest.setUserId(Objects.requireNonNull(SessionUtils.getUser()).getId());
+            runRequest.setJmx(new MsTestPlan().getJmx(hashTree));
+            MultiValueMap<String, Object> postParameters = new LinkedMultiValueMap<>();
+            if (CollectionUtils.isEmpty(multipartFiles)) {
+                multipartFiles.add(new FileSystemResource(file));
+            }
+            if (CollectionUtils.isEmpty(jarFiles)) {
+                jarFiles.add(new FileSystemResource(file));
+            }
+            postParameters.put("files", multipartFiles);
+            postParameters.put("jarFiles", jarFiles);
+            postParameters.add("request", JSON.toJSONString(runRequest));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));
+            HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(postParameters, headers);
+
+            ResponseEntity<String> result = restTemplate.postForEntity(uri, request, String.class);
+            if (result == null || !StringUtils.equals("SUCCESS", result.getBody())) {
+                // 清理零时报告
+                ApiScenarioReportService apiScenarioReportService = CommonBeanFactory.getBean(ApiScenarioReportService.class);
+                apiScenarioReportService.delete(testId);
+                MSException.throwException("执行失败：" + result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            MSException.throwException("Please check node-controller status.");
+        }
+    }
 }

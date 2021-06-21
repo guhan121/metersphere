@@ -17,6 +17,7 @@ import io.metersphere.service.TestResourceService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 

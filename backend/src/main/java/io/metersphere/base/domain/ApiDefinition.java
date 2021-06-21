@@ -39,5 +39,13 @@ public class ApiDefinition implements Serializable {
 
     private String originalState;
 
+    private String createUser;
+
+    private String caseTotal;
+
+    private String caseStatus;
+
+    private String casePassingRate;
+
     private static final long serialVersionUID = 1L;
 }

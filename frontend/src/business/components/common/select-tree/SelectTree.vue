@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-loading="loading">
     <div class="mask" v-show="isShowSelect"></div>
     <el-popover placement="bottom-start" :width="popoverWidth" trigger="manual" v-model="isShowSelect"
                 @hide="popoverHide" v-outside-click="outsideClick">
@@ -152,6 +152,7 @@
         returnDataKeys: [],//返回父组件数组主键值
         defaultKeys:[],
         filterText: "",
+        loading:false,
       };
     },
     computed: {
@@ -266,6 +267,7 @@
           let node = this.$refs.tree.getNode(item); // 所有被选中的节点对应的node
           tkey.push(node.key)
           t.push(node.data);
+          this.options.push({label: node.label, value: node.key});
           return {label: node.label, value: node.key};
         });
         this.defaultKeys= tkey;
@@ -350,7 +352,14 @@
         }
         return false;
       },
+      reload() {
+        this.loading = true
+        this.$nextTick(() => {
+          this.loading = false
+        });
+      },
     },
+
     watch: {
       returnDatas: function (val) {
         let cur = this.$refs.tree.getNode(val);

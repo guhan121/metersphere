@@ -65,6 +65,7 @@ public class MsJmeterElement extends MsTestElement {
                             MSException.throwException(StringUtils.isEmpty(((CSVDataSet) scriptWrapper).getName()) ? "CSVDataSet" : ((CSVDataSet) scriptWrapper).getName() + "：[ CSV文件不存在 ]");
                         }
                     }
+
                     String csvPath = ((CSVDataSet) scriptWrapper).getPropertyAsString("filename");
                     if (config.getCsvFilePaths().contains(csvPath)) {
                         return;

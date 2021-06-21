@@ -1,5 +1,6 @@
 package io.metersphere.base.mapper.ext;
 
+import io.metersphere.controller.request.BaseQueryRequest;
 import io.metersphere.track.dto.TestCaseReportStatusResultDTO;
 import io.metersphere.track.dto.TestCaseTestDTO;
 import io.metersphere.track.dto.TestPlanCaseDTO;
@@ -48,9 +49,11 @@ public interface ExtTestPlanTestCaseMapper {
 
     List<String> getExecResultByPlanId(String planId);
 
-    List<TestPlanCaseDTO> listForMinder(@Param("planId") String planId);
+    List<TestPlanCaseDTO> listForMinder(@Param("request") QueryTestPlanCaseRequest request);
 
     List<TestCaseTestDTO> listTestCaseTest(@Param("caseId") String caseId);
 
     List<String> selectIds(@Param("request") TestPlanFuncCaseConditions conditions);
+
+    List<String> selectIdsByQuery(@Param("request") BaseQueryRequest query);
 }

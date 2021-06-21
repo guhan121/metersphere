@@ -4,9 +4,11 @@
       <h4>{{ $t('load_test.scenario_list') }}</h4>
     </el-row>
     <el-row type="flex" justify="start" align="middle">
-      <ms-table-button :is-tester-permission="true" icon="el-icon-circle-plus-outline"
+      <ms-table-button icon="el-icon-circle-plus-outline"
+                       :disabled="isReadOnly"
                        :content="$t('load_test.load_exist_jmx')" @click="loadJMX()"/>
-      <ms-table-button :is-tester-permission="true" icon="el-icon-share"
+      <ms-table-button icon="el-icon-share"
+                       :disabled="isReadOnly"
                        @click="loadApiAutomation()"
                        :content="$t('load_test.load_api_automation_jmx')"/>
     </el-row>
@@ -24,8 +26,17 @@
                      inactive-color="#DCDFE6"
                      active-value="true"
                      inactive-value="false"
-                     :disabled="threadGroupDisable(row)"
+                     :disabled="isReadOnly || threadGroupDisable(row)"
           />
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="CSVDataSet">
+        <template v-slot:default="scope">
+          <ms-tag v-for="(f, index) in scope.row.csvFiles"
+                  :key="index"
+                  effect="light"
+                  :content="f"/>
         </template>
       </el-table-column>
       <el-table-column
@@ -34,7 +45,9 @@
           <span v-if="row.tgType === 'PostThreadGroup' || row.tgType === 'SetupThreadGroup'">
             {{ row.tgType }}
           </span>
-          <el-select v-else v-model="row.tgType" :placeholder="$t('commons.please_select')" size="small"
+          <el-select v-else v-model="row.tgType"
+                     :disabled="isReadOnly"
+                     :placeholder="$t('commons.please_select')" size="small"
                      @change="tgTypeChange(row)">
             <el-option v-for="tg in threadGroupForSelect" :key="tg.tagName" :label="tg.name"
                        :value="tg.testclass"></el-option>
@@ -58,7 +71,8 @@
     </el-row>
     <el-row type="flex" justify="start" align="middle">
 
-      <ms-table-button :is-tester-permission="true" icon="el-icon-circle-plus-outline"
+      <ms-table-button icon="el-icon-circle-plus-outline"
+                       :disabled="isReadOnly"
                        :content="$t('load_test.load_exist_file')" @click="loadFile()"/>
     </el-row>
     <el-table class="basic-config" :data="tableData">
@@ -121,22 +135,24 @@ import MsDialogFooter from "@/business/components/common/components/MsDialogFoot
 import ExistFiles from "@/business/components/performance/test/components/ExistFiles";
 import ExistScenarios from "@/business/components/performance/test/components/ExistScenarios";
 import {findThreadGroup} from "@/business/components/performance/test/model/ThreadGroup";
+import {hasPermission} from "@/common/js/utils";
+import MsTag from "@/business/components/common/components/MsTag";
 
 export default {
   name: "PerformanceBasicConfig",
-  components: {ExistScenarios, ExistFiles, MsDialogFooter, MsTableOperatorButton, MsTablePagination, MsTableButton},
+  components: {
+    MsTag,
+    ExistScenarios, ExistFiles, MsDialogFooter, MsTableOperatorButton, MsTablePagination, MsTableButton
+  },
   props: {
     test: {
       type: Object
     },
-    isReadOnly: {
-      type: Boolean,
-      default: false
-    }
   },
   data() {
     return {
       result: {},
+      isReadOnly: false,
       projectLoadingResult: {},
       getFileMetadataPath: "/performance/file/metadata",
       getFileMetadataById: "/performance/file/getMetadataById",
@@ -176,6 +192,7 @@ export default {
     if (this.test.id) {
       this.getFileMetadata(this.test);
     }
+    this.isReadOnly = !hasPermission('PROJECT_PERFORMANCE_TEST:READ+EDIT');
   },
   watch: {
     test() {

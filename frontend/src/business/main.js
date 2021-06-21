@@ -58,8 +58,6 @@ Vue.directive('roles', roles);
 
 Vue.directive('xpack', xpack);
 
-Vue.directive('tester', tester);
-
 Vue.directive('modules', modules);
 
 //支持左右拖拽
@@ -78,7 +76,10 @@ Vue.directive('preventReClick', {
       }
     })
   }
-})
+});
+
+// 添加全局事件总线
+Vue.prototype.$EventBus = new Vue();
 
 new Vue({
   el: '#app',

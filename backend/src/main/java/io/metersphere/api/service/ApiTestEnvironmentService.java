@@ -1,5 +1,6 @@
 package io.metersphere.api.service;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import io.metersphere.api.dto.ApiTestEnvironmentDTO;
@@ -8,11 +9,17 @@ import io.metersphere.base.domain.ApiTestEnvironmentExample;
 import io.metersphere.base.domain.ApiTestEnvironmentWithBLOBs;
 import io.metersphere.base.mapper.ApiTestEnvironmentMapper;
 import io.metersphere.commons.exception.MSException;
-import io.metersphere.commons.utils.FileUtils;
 import io.metersphere.commons.utils.CommonBeanFactory;
+import io.metersphere.commons.utils.FileUtils;
+import io.metersphere.commons.utils.SessionUtils;
 import io.metersphere.controller.request.EnvironmentRequest;
 import io.metersphere.dto.BaseSystemConfigDTO;
 import io.metersphere.i18n.Translator;
+import io.metersphere.log.utils.ReflexObjectUtil;
+import io.metersphere.log.vo.DetailColumn;
+import io.metersphere.log.vo.OperatingLogDetails;
+import io.metersphere.log.vo.system.SystemReference;
+import io.metersphere.service.ProjectService;
 import io.metersphere.service.SystemParameterService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -77,10 +84,28 @@ public class ApiTestEnvironmentService {
 
     public String add(ApiTestEnvironmentDTO request, List<MultipartFile> sslFiles) {
         request.setId(UUID.randomUUID().toString());
+        request.setCreateUser(SessionUtils.getUserId());
         checkEnvironmentExist(request);
         FileUtils.createFiles(request.getUploadIds(), sslFiles, FileUtils.BODY_FILE_DIR + "/ssl");
+        //检查Config，判断isMock参数是否给True
+        request = this.updateConfig(request,false);
         apiTestEnvironmentMapper.insert(request);
         return request.getId();
+    }
+
+    private ApiTestEnvironmentDTO updateConfig(ApiTestEnvironmentDTO request, boolean isMock) {
+        if(StringUtils.isNotEmpty(request.getConfig())){
+            try{
+                JSONObject configObj = JSONObject.parseObject(request.getConfig());
+                if(configObj.containsKey("httpConfig")){
+                    JSONObject httpObj = configObj.getJSONObject("httpConfig");
+                    httpObj.put("isMock",isMock);
+                }
+                request.setConfig(configObj.toJSONString());
+            }catch (Exception e){
+            }
+        }
+        return request;
     }
 
     public void update(ApiTestEnvironmentDTO apiTestEnvironment,List<MultipartFile> sslFiles) {
@@ -127,17 +152,19 @@ public class ApiTestEnvironmentService {
         ApiTestEnvironmentExample example = new ApiTestEnvironmentExample();
         example.createCriteria().andProjectIdEqualTo(projectId).andNameEqualTo(apiName);
         List<ApiTestEnvironmentWithBLOBs> list = this.selectByExampleWithBLOBs(example);
+
+        String projectNumber = this.getSystemIdByProjectId(projectId);
         if (list.isEmpty()) {
-            returnModel = this.genHttpApiTestEnvironmentByUrl(projectId, protocal, apiName, baseUrl);
+            returnModel = this.genHttpApiTestEnvironmentByUrl(projectId,projectNumber, protocal, apiName, baseUrl);
             this.add(returnModel);
         } else {
             returnModel = list.get(0);
-            returnModel = this.checkMockEvnIsRightful(returnModel, protocal, projectId, apiName, baseUrl);
+            returnModel = this.checkMockEvnIsRightful(returnModel, protocal, projectId,projectNumber, apiName, baseUrl);
         }
         return returnModel;
     }
 
-    private ApiTestEnvironmentWithBLOBs checkMockEvnIsRightful(ApiTestEnvironmentWithBLOBs returnModel, String protocal, String projectId, String name, String url) {
+    private ApiTestEnvironmentWithBLOBs checkMockEvnIsRightful(ApiTestEnvironmentWithBLOBs returnModel, String protocal, String projectId,String projectNumber, String name, String url) {
         boolean needUpdate = false;
         if (returnModel.getConfig() != null) {
             try {
@@ -158,10 +185,18 @@ public class ApiTestEnvironmentService {
                                     } else if (socket.startsWith("https://")) {
                                         socket = socket.substring(8);
                                     }
-                                    if (!obj.containsKey("socket") || !StringUtils.equals(socket, String.valueOf(obj.get("socket")))) {
+                                    if (!obj.containsKey("socket") || !StringUtils.startsWith(String.valueOf(obj.get("socket")),socket)) {
                                         needUpdate = true;
+                                        break;
                                     } else if (!obj.containsKey("protocol") || !StringUtils.equals(protocal, String.valueOf(obj.get("protocol")))) {
                                         needUpdate = true;
+                                        break;
+                                    }
+
+                                    String projectSocket = String.valueOf(obj.get("socket"));
+                                    if(!StringUtils.contains(projectSocket,"/mock/"+projectNumber)){
+                                        needUpdate = true;
+                                        break;
                                     }
                                 }
                             }
@@ -169,19 +204,20 @@ public class ApiTestEnvironmentService {
                     }
                 }
             } catch (Exception e) {
+                needUpdate = true;
                 e.printStackTrace();
             }
         }
         if (needUpdate) {
             String id = returnModel.getId();
-            returnModel = this.genHttpApiTestEnvironmentByUrl(projectId, protocal, name, url);
+            returnModel = this.genHttpApiTestEnvironmentByUrl(projectId,projectNumber, protocal, name, url);
             returnModel.setId(id);
             apiTestEnvironmentMapper.updateByPrimaryKeyWithBLOBs(returnModel);
         }
         return returnModel;
     }
 
-    private ApiTestEnvironmentWithBLOBs genHttpApiTestEnvironmentByUrl(String projectId, String protocal, String name, String url) {
+    private ApiTestEnvironmentWithBLOBs genHttpApiTestEnvironmentByUrl(String projectId,String projectNumber, String protocal, String name, String url) {
         String socket = "";
         if (url.startsWith("http://")) {
             url = url.substring(7);
@@ -229,7 +265,7 @@ public class ApiTestEnvironmentService {
         JSONObject httpItem = new JSONObject();
         httpItem.put("id", UUID.randomUUID().toString());
         httpItem.put("type", "NONE");
-        httpItem.put("socket", socket);
+        httpItem.put("socket", socket+"/mock/"+projectNumber);
         httpItem.put("protocol", protocal);
         JSONArray protocolVariablesArr = new JSONArray();
         Map<String, Object> protocolMap = new HashMap<>();
@@ -286,9 +322,28 @@ public class ApiTestEnvironmentService {
                 } else if (baseUrl.startsWith("https:")) {
                     protocal = "https";
                 }
-
-                model = this.checkMockEvnIsRightful(model, protocal, model.getProjectId(), model.getName(), baseUrl);
+                String projectNumber = this.getSystemIdByProjectId(model.getProjectId());
+                model = this.checkMockEvnIsRightful(model, protocal, model.getProjectId(),projectNumber, model.getName(), baseUrl);
             }
         }
+    }
+
+    private String getSystemIdByProjectId(String projectId){
+        ProjectService projectService = CommonBeanFactory.getBean(ProjectService.class);
+        if(projectService != null){
+            return  projectService.getSystemIdByProjectId(projectId);
+        }else {
+            return "";
+        }
+    }
+
+    public String getLogDetails(String id) {
+        ApiTestEnvironmentWithBLOBs bloBs = apiTestEnvironmentMapper.selectByPrimaryKey(id);
+        if (bloBs != null) {
+            List<DetailColumn> columns = ReflexObjectUtil.getColumns(bloBs, SystemReference.environmentColumns);
+            OperatingLogDetails details = new OperatingLogDetails(JSON.toJSONString(bloBs.getId()), bloBs.getProjectId(), bloBs.getName(), bloBs.getCreateUser(), columns);
+            return JSON.toJSONString(details);
+        }
+        return null;
     }
 }

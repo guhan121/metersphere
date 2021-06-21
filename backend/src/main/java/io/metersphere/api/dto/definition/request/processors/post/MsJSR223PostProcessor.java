@@ -2,8 +2,10 @@ package io.metersphere.api.dto.definition.request.processors.post;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.fastjson.annotation.JSONType;
+import io.metersphere.api.dto.RunningParamKeys;
 import io.metersphere.api.dto.definition.request.MsTestElement;
 import io.metersphere.api.dto.definition.request.ParameterConfig;
+import io.metersphere.api.dto.scenario.environment.EnvironmentConfig;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections.CollectionUtils;
@@ -13,6 +15,7 @@ import org.apache.jmeter.save.SaveService;
 import org.apache.jmeter.testelement.TestElement;
 import org.apache.jorphan.collections.HashTree;
 
+import java.util.Collection;
 import java.util.List;
 
 @Data
@@ -29,6 +32,26 @@ public class MsJSR223PostProcessor extends MsTestElement {
 
     @Override
     public void toHashTree(HashTree tree, List<MsTestElement> hashTree, ParameterConfig config) {
+        if(StringUtils.isEmpty(this.getUseEnviroment())){
+            if(config.getConfig() != null){
+                if(config.getProjectId() != null){
+                    String evnId = config.getConfig().get(config.getProjectId()).getApiEnvironmentid();
+                    this.setUseEnviroment(evnId);
+                }else {
+                    Collection<EnvironmentConfig> evnConfigList = config.getConfig().values();
+                    if(evnConfigList!=null && !evnConfigList.isEmpty()){
+                        for (EnvironmentConfig configItem : evnConfigList) {
+                            String evnId = configItem.getApiEnvironmentid();
+                            this.setUseEnviroment(evnId);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        //替换Metersphere环境变量
+        script = StringUtils.replace(script,RunningParamKeys.API_ENVIRONMENT_ID,"\""+RunningParamKeys.RUNNING_PARAMS_PREFIX+this.getUseEnviroment()+".\"");
+
         // 非导出操作，且不是启用状态则跳过执行
         if (!config.isOperating() && !this.isEnable()) {
             return;

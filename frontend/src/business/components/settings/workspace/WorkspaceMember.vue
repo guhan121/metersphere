@@ -2,12 +2,13 @@
   <div v-loading="result.loading">
     <el-card class="table-card">
       <template v-slot:header>
-        <ms-table-header :condition.sync="condition" @search="initTableData" @create="create"
+        <ms-table-header :create-permission="['WORKSPACE_USER:READ+CREATE']" :condition.sync="condition" @search="initTableData" @create="create"
                          :create-tip="$t('member.create')" :title="$t('commons.member')"/>
       </template>
       <el-table border class="adjust-table ms-select-all-fixed" :data="tableData" style="width: 100%"
                 @select-all="handleSelectAll"
                 @select="handleSelect"
+                :height="screenHeight"
                 ref="userTable">
 
         <el-table-column type="selection" width="50"/>
@@ -15,6 +16,7 @@
                                         :page-size="pageSize>total?total:pageSize"
                                         :total="total"
                                         :select-data-counts="selectDataCounts"
+                                        :table-data-count-in-page="tableData.length"
                                         @selectPageAll="isSelectDataAll(false)"
                                         @selectAll="isSelectDataAll(true)"/>
         <el-table-column v-if="!referenced" width="30" min-width="30" :resizable="false" align="center">
@@ -27,15 +29,19 @@
         <el-table-column prop="name" :label="$t('commons.username')"/>
         <el-table-column prop="email" :label="$t('commons.email')"/>
         <el-table-column prop="phone" :label="$t('commons.phone')"/>
-        <el-table-column prop="roles" :label="$t('commons.role')" width="120">
+        <el-table-column prop="groups" :label="$t('commons.group')" width="150">
           <template v-slot:default="scope">
-            <ms-roles-tag :roles="scope.row.roles" type="success"/>
+            <ms-roles-tag :roles="scope.row.groups" type="success"/>
           </template>
         </el-table-column>
         <el-table-column :label="$t('commons.operating')">
           <template v-slot:default="scope">
-            <ms-table-operator :tip2="$t('commons.remove')" @editClick="edit(scope.row)" @deleteClick="del(scope.row)"
-                               v-permission="['test_manager']"/>
+            <div>
+              <ms-table-operator :edit-permission="['WORKSPACE_USER:READ+EDIT']"
+                                 :delete-permission="['WORKSPACE_USER:READ+DELETE']"
+                                 :tip2="$t('commons.remove')" @editClick="edit(scope.row)"
+                                 @deleteClick="del(scope.row)"/>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -43,33 +49,35 @@
                            :total="total"/>
     </el-card>
 
-    <el-dialog :close-on-click-modal="false" :title="$t('member.create')" :visible.sync="createVisible" width="30%" :destroy-on-close="true"
+    <el-dialog :close-on-click-modal="false" :title="$t('member.create')" :visible.sync="createVisible" width="40%" :destroy-on-close="true"
                @close="handleClose">
       <el-form :model="form" ref="form" :rules="rules" label-position="right" label-width="100px" size="small">
-        <el-form-item :label="$t('commons.member')" prop="memberSign" :rules="{required: true, message: $t('member.input_id_or_email'), trigger: 'change'}">
-          <el-autocomplete
-            class="input-with-autocomplete"
-            v-model="form.memberSign"
-            :placeholder="$t('member.input_id_or_email')"
-            :trigger-on-focus="false"
-            :fetch-suggestions="querySearch"
-            size="small"
-            highlight-first-item
-            value-key="email"
-            @select="handleSelect"
-          >
-            <template v-slot:default="scope">
-              <span class="workspace-member-name">{{scope.item.id}}</span>
-              <span class="workspace-member-email">{{scope.item.email}}</span>
-            </template>
-          </el-autocomplete>
-        </el-form-item>
-        <el-form-item :label="$t('commons.role')" prop="roleIds">
-          <el-select v-model="form.roleIds" multiple :placeholder="$t('role.please_choose_role')" class="select-width">
+        <el-form-item :label="$t('commons.member')" prop="userIds" :rules="{required: true, message: $t('member.please_choose_member'), trigger: 'blur'}">
+          <el-select
+            v-model="form.userIds"
+            multiple
+            filterable
+            :popper-append-to-body="false"
+            class="select-width"
+            :placeholder="$t('member.please_choose_member')">
             <el-option
-              v-for="item in form.roles"
+              v-for="item in userList"
               :key="item.id"
-              :label="$t('role.' + item.id)"
+              :label="item.id"
+              :value="item.id">
+              <template>
+                <span class="workspace-member-name">{{item.name}} ({{item.id}})</span>
+                <span class="workspace-member-email">{{item.email}}</span>
+              </template>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="$t('commons.group')" prop="groupIds">
+          <el-select v-model="form.groupIds" multiple :placeholder="$t('group.please_select_group')" class="select-width">
+            <el-option
+              v-for="item in form.groups"
+              :key="item.id"
+              :label="item.name"
               :value="item.id">
             </el-option>
           </el-select>
@@ -97,12 +105,12 @@
         <el-form-item :label="$t('commons.phone')" prop="phone">
           <el-input v-model="form.phone" autocomplete="off" :disabled="true"/>
         </el-form-item>
-        <el-form-item :label="$t('commons.role')" prop="roleIds" :rules="{required: true, message: $t('role.please_choose_role'), trigger: 'change'}">
-          <el-select v-model="form.roleIds" multiple :placeholder="$t('role.please_choose_role')" class="select-width">
+        <el-form-item :label="$t('commons.group')" prop="groupIds" :rules="{required: true, message: $t('group.please_select_group'), trigger: 'change'}">
+          <el-select v-model="form.groupIds" multiple :placeholder="$t('group.please_select_group')" class="select-width">
             <el-option
-              v-for="item in form.allroles"
+              v-for="item in form.allgroups"
               :key="item.id"
-              :label="$t('role.' + item.id)"
+              :label="item.name"
               :value="item.id">
             </el-option>
           </el-select>
@@ -141,6 +149,7 @@
   } from "@/common/js/tableUtils";
   import UserCascader from "@/business/components/settings/system/components/UserCascader";
   import ShowMoreBtn from "@/business/components/track/case/components/ShowMoreBtn";
+  import {GROUP_WORKSPACE} from "@/common/js/constants";
 
   export default {
     name: "MsMember",
@@ -160,10 +169,11 @@
           userIds: [
             {required: true, message: this.$t('member.please_choose_member'), trigger: ['blur']}
           ],
-          roleIds: [
-            {required: true, message: this.$t('role.please_choose_role'), trigger: ['blur']}
+          groupIds: [
+            {required: true, message: this.$t('group.please_select_group'), trigger: ['blur']}
           ]
         },
+        screenHeight: 'calc(100vh - 255px)',
         multipleSelection: [],
         currentPage: 1,
         pageSize: 10,
@@ -173,11 +183,11 @@
         batchAddTitle: this.$t('project.batch_choose_workspace'),
         selectRows: new Set(),
         referenced: false,
-        batchAddUserRoleOptions:[],
+        batchAddUserRoleOptions: [],
         buttons: [
-          {
-            name: this.$t('user.button.add_user_role_batch'), handleClick: this.addUserRoleBatch
-          }
+          // {
+          //   name: this.$t('user.button.add_user_role_batch'), handleClick: this.addUserRoleBatch
+          // }
         ],
       }
     },
@@ -201,11 +211,11 @@
         this.result = this.$post(this.buildPagePath(this.queryPath), param, response => {
           let data = response.data;
           this.tableData = data.listObject;
-          let url = "/userrole/list/ws/" + this.currentUser().lastWorkspaceId;
+          let url = "/user/group/list/ws/" + this.currentUser().lastWorkspaceId;
           for (let i = 0; i < this.tableData.length; i++) {
             this.$get(url + "/" + encodeURIComponent(this.tableData[i].id), response => {
-              let roles = response.data;
-              this.$set(this.tableData[i], "roles", roles);
+              let groups = response.data;
+              this.$set(this.tableData[i], "groups", groups);
             })
           }
           this.total = data.itemCount;
@@ -263,12 +273,12 @@
       edit(row) {
         this.updateVisible = true;
         this.form = Object.assign({}, row);
-        let roleIds = this.form.roles.map(r => r.id);
-        this.result = this.$get('/role/list/test', response => {
-          this.$set(this.form, "allroles", response.data);
+        let groupIds = this.form.groups.map(r => r.id);
+        this.result = this.$post('/user/group/list', {type: GROUP_WORKSPACE, resourceId: getCurrentOrganizationId()}, response => {
+          this.$set(this.form, "allgroups", response.data);
         })
         // 编辑使填充角色信息
-        this.$set(this.form, 'roleIds', roleIds);
+        this.$set(this.form, 'groupIds', groupIds);
         listenGoBack(this.handleClose);
       },
       updateWorkspaceMember(formName) {
@@ -277,7 +287,7 @@
           name: this.form.name,
           email: this.form.email,
           phone: this.form.phone,
-          roleIds: this.form.roleIds,
+          groupIds: this.form.groupIds,
           workspaceId: this.currentUser().lastWorkspaceId
         }
         this.$refs[formName].validate((valid) => {
@@ -309,33 +319,23 @@
           this.createVisible = true;
           this.userList = response.data;
         })
-        this.result = this.$get('/role/list/test', response => {
-          this.$set(this.form, "roles", response.data);
+        this.result = this.$post('/user/group/list', {type: GROUP_WORKSPACE, resourceId: getCurrentOrganizationId()}, response => {
+          this.$set(this.form, "groups", response.data);
         })
         listenGoBack(this.handleClose);
       },
       submitForm(formName) {
         this.$refs[formName].validate((valid) => {
           if (valid) {
-            let userIds = [];
-            let userId = this.form.userId;
-            let email  = this.form.memberSign;
-            let member = this.userList.find(user => user.id === email || user.email === email);
-            if (!member) {
-              this.$warning(this.$t('member.no_such_user'));
-              return false;
-            } else {
-              userId = member.id;
-            }
-            userIds.push(userId);
             let param = {
-              userIds: userIds,
-              roleIds: this.form.roleIds,
+              userIds: this.form.userIds,
+              groupIds: this.form.groupIds,
               workspaceId: this.currentUser().lastWorkspaceId
             };
             this.result = this.$post("user/ws/member/add", param, () => {
               this.$success(this.$t('commons.save_success'));
               this.initTableData();
+              this.selectRows.clear();
               this.createVisible = false;
             })
           }

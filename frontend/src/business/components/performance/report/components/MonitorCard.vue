@@ -1,6 +1,6 @@
 <template>
   <div v-loading="result.loading">
-    <el-tabs type="border-card" :stretch="true">
+    <el-tabs>
       <el-tab-pane v-for="(item,index) in instances" :key="index" :label="item" class="logging-content">
         <el-row>
           <el-col :span="12">
@@ -28,6 +28,8 @@
 
 import MsChart from "@/business/components/common/chart/MsChart";
 
+const color = ['#60acfc', '#32d3eb', '#5bc49f', '#feb64d', '#ff7c7c', '#9287e7', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3'];
+
 export default {
   name: "MonitorCard",
   props: ['report'],
@@ -47,15 +49,21 @@ export default {
   },
   methods: {
     getResource() {
-      this.result = this.$get("/metric/query/resource/" + this.report.id, data => {
-        this.instances = data.data;
-      });
+      this.result = this.$get("/metric/query/resource/" + this.report.id)
+        .then(response => {
+          this.instances = response.data.data;
+        })
+        .catch(() => {
+        });
 
-      this.$get("/metric/query/" + this.report.id, result => {
-        if (result) {
-          this.data = result.data;
-        }
-      });
+      this.$get("/metric/query/" + this.report.id)
+        .then(result => {
+          if (result) {
+            this.data = result.data.data;
+          }
+        })
+        .catch(() => {
+        });
     },
     getCpuOption(id) {
       let xAxis = [];
@@ -67,6 +75,7 @@ export default {
         }
       });
       let option = {
+        color: color,
         title: {
           left: 'center',
           text: 'CPU使用率',
@@ -102,6 +111,7 @@ export default {
         }
       });
       let option = {
+        color: color,
         title: {
           left: 'center',
           text: '磁盘使用率',
@@ -137,6 +147,7 @@ export default {
         }
       });
       let option = {
+        color: color,
         title: {
           left: 'center',
           text: '入口流量',
@@ -172,6 +183,7 @@ export default {
         }
       });
       let option = {
+        color: color,
         title: {
           left: 'center',
           text: '出口流量',
@@ -207,6 +219,7 @@ export default {
         }
       });
       let option = {
+        color: color,
         title: {
           left: 'center',
           text: '内存使用率',
