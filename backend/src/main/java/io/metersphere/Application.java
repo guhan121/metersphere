@@ -25,6 +25,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @PropertySource(value = {"file:/opt/metersphere/conf/metersphere.properties"}, encoding = "UTF-8", ignoreResourceNotFound = true)
 public class Application {
     public static void main(String[] args) {
+
+        System.setProperty("sun.net.spi.nameservice.provider.1", "dns,custom");
+        System.setProperty("sun.net.spi.nameservice.provider.2", "default");
+
         SpringApplication.run(Application.class, args);
     }
 }

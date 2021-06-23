@@ -1,0 +1,3 @@
+# dns service provider descriptor
+io.metersphere.nameservice.CustomNameServiceDescriptor
+sun.net.spi.nameservice.dns.DNSNameServiceDescriptor
