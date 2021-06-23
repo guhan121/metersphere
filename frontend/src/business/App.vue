@@ -16,6 +16,7 @@
         <ms-user/>
         <ms-language-switch :color="color"/>
         <ms-header-org-ws :color="color"/>
+        <label v-if="instance" class="ms-instance align-right">{{ $t('commons.current_instance') }}{{ instance }}</label>
       </el-col>
     </el-row>
 
@@ -49,7 +50,8 @@ export default {
       auth: false,
       header: {},
       logoId: '_blank',
-      color: ''
+      color: '',
+      instance: null
     }
   },
   created() {
@@ -76,6 +78,9 @@ export default {
     }
     window.addEventListener("beforeunload", () => {
       localStorage.setItem("store", JSON.stringify(this.$store.state))
+    })
+    this.$get('/system/instance', res => {
+      this.instance = res.data ? res.data : null
     })
   },
   beforeCreate() {
@@ -166,5 +171,13 @@ export default {
   text-align: center;
   line-height: 30px;
   color: white;
+}
+
+.ms-instance {
+  display: inline-block;
+  height: 40px;
+  line-height: 40px;
+  font-size: 14px;
+  margin-right: 20px;
 }
 </style>

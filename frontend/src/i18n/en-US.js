@@ -28,6 +28,7 @@ export default {
     option_cannot_spread_pages: 'This options not support spread pages.Do you want continue?',
     workspace: 'Workspace',
     organization: 'Organization',
+    current_instance: 'Instance:',
     setting: 'Setting',
     project: 'Project',
     about_us: 'About Us',

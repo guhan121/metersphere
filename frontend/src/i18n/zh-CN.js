@@ -28,6 +28,7 @@ export default {
     delete_cancelled: '已取消删除',
     workspace: '工作空间',
     organization: '组织',
+    current_instance: '当前实例：',
     setting: '设置',
     project: '项目',
     about_us: '关于',
