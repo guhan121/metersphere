@@ -1,5 +1,7 @@
 package io.metersphere.service;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import io.metersphere.api.service.ApiTestEnvironmentService;
 import io.metersphere.base.domain.*;
 import io.metersphere.base.mapper.SystemHeaderMapper;
@@ -14,6 +16,7 @@ import io.metersphere.controller.request.HeaderRequest;
 import io.metersphere.dto.BaseSystemConfigDTO;
 import io.metersphere.i18n.Translator;
 import io.metersphere.ldap.domain.LdapInfo;
+import io.metersphere.nameservice.CustomNameService;
 import io.metersphere.notice.domain.MailInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -26,10 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 
 @Service
@@ -220,6 +220,35 @@ public class SystemParameterService {
             return "";
         }
         return param.getParamValue();
+    }
+
+    public Map<String, String> getHostMap() {
+        SystemParameter param = systemParameterMapper.selectByPrimaryKey("env.hosts");
+        if (param == null || StringUtils.isBlank(param.getParamValue())) {
+            return new HashMap<>();
+        }
+        return JSON.parseObject(param.getParamValue(), new TypeReference<Map<String, String>>() {
+        });
+    }
+
+    public void updateHostMap(Map<String, String> hostMap) {
+        if (hostMap == null) {
+            hostMap = new HashMap<>();
+        }
+        CustomNameService.clear();
+        CustomNameService.load(hostMap);
+        SystemParameter param = new SystemParameter();
+        param.setParamKey("env.hosts");
+        param.setType("text");
+        param.setSort(1);
+        param.setParamValue(JSON.toJSONString(hostMap));
+        SystemParameterExample example = new SystemParameterExample();
+        example.createCriteria().andParamKeyEqualTo("env.hosts");
+        if (systemParameterMapper.countByExample(example) > 0) {
+            systemParameterMapper.updateByPrimaryKey(param);
+        } else {
+            systemParameterMapper.insert(param);
+        }
     }
 
     public BaseSystemConfigDTO getBaseInfo() {

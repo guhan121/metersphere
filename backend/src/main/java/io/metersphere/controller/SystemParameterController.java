@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(value = "/system")
@@ -99,4 +100,15 @@ public class SystemParameterController {
     public UserHeader getHeaderInfo(@RequestBody HeaderRequest headerRequest) {
         return SystemParameterService.queryUserHeader(headerRequest);
     }
+
+    @GetMapping("/hostMap")
+    public Map<String, String> getHostMap() {
+        return SystemParameterService.getHostMap();
+    }
+
+    @PutMapping("/hostMap")
+    public void getHostMap(@RequestBody HashMap<String, String> hostMap) {
+        SystemParameterService.updateHostMap(hostMap);
+    }
+
 }
