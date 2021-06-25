@@ -19,7 +19,9 @@ public class NameServiceInitRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         Map<String, String> mapping = systemParameterService.getHostMap();
-        CustomNameService.load(mapping);
-        LogUtil.info("Load hosts mapping success");
+        if (mapping.size() > 0) {
+            CustomNameService.load(mapping);
+            LogUtil.info("Load hosts mapping success");
+        }
     }
 }
