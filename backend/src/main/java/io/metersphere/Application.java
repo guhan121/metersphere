@@ -26,8 +26,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class Application {
     public static void main(String[] args) {
 
-        System.setProperty("sun.net.spi.nameservice.provider.1", "dns,custom");
-        System.setProperty("sun.net.spi.nameservice.provider.2", "default");
+        //启用自定义nameService服务
+//        System.setProperty("sun.net.spi.nameservice.provider.1", "dns,custom");
+//        System.setProperty("sun.net.spi.nameservice.provider.2", "default");
 
         SpringApplication.run(Application.class, args);
     }
