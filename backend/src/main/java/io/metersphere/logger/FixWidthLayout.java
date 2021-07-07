@@ -2,6 +2,8 @@ package io.metersphere.logger;
 
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.IThrowableProxy;
+import ch.qos.logback.classic.spi.ThrowableProxyUtil;
 import ch.qos.logback.core.CoreConstants;
 import ch.qos.logback.core.LayoutBase;
 
@@ -83,7 +85,16 @@ public class FixWidthLayout extends LayoutBase<ILoggingEvent> {
         sbuf.append(":");
         sbuf.append(String.format("%4d", lineNumber));
         sbuf.append(" - ");
+        IThrowableProxy throwableProxy = event.getThrowableProxy();
+        if (throwableProxy != null) {
+            sbuf.append(throwableProxy.getClassName());
+            sbuf.append(" | ");
+        }
         sbuf.append(event.getFormattedMessage());
+        if (throwableProxy != null) {
+            sbuf.append(CoreConstants.LINE_SEPARATOR);
+            sbuf.append(ThrowableProxyUtil.asString(throwableProxy));
+        }
         sbuf.append(CoreConstants.LINE_SEPARATOR);
         return sbuf.toString();
     }
