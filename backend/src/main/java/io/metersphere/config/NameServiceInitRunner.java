@@ -5,12 +5,11 @@ import io.metersphere.nameservice.CustomNameService;
 import io.metersphere.service.SystemParameterService;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.Map;
 
-@Component
+//@Component
 public class NameServiceInitRunner implements ApplicationRunner {
 
     @Resource
